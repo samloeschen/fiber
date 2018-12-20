@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class SharedLineManager : MonoBehaviour {
+public class SharedLineRenderer : MonoBehaviour {
     public List<Vector3> vertices;
     public List<int> triangles;
     public List<Vector3> points;
@@ -18,24 +18,17 @@ public class SharedLineManager : MonoBehaviour {
     public bool autoAllocate = true;
     public int initialMeshSize = 512;
 
-    [HideInInspector]
-    public MeshFilter meshFilter;
     [ReadOnly]
     public Mesh mesh;
 
     // test bullshit
     SharedLine testLine0;
-    SharedLine testLine1;
     public float testLineLength;
     public float testLineWidth;
     public int testLinePoints;
     public Color testLineColor;
     public AnimationCurve fadeCurve;
 
-
-    void Awake () {
-        meshFilter = GetComponent<MeshFilter>();
-    }
 
     void OnEnable () {
         if (autoAllocate) {
@@ -45,12 +38,10 @@ public class SharedLineManager : MonoBehaviour {
         testLinePool = new List<SharedLine>();
         timers = new List<float>();
         testLine0 = new SharedLine();
-        testLine1 = new SharedLine();
         testLine0.points = new Vector3[testLinePoints];
         testLine0.widths = new float[testLinePoints];
         testLine0.facings = new Vector3[testLinePoints];
         AddLine(testLine0);
-        // AddLine(testLine1);
     }
 
     public void AllocateMesh () {
@@ -61,6 +52,7 @@ public class SharedLineManager : MonoBehaviour {
         colors = new List<Vector4>(initialMeshSize * 2);
         triangles = new List<int>(initialMeshSize * 6);
         mesh = new Mesh();
+        mesh.name = "SharedLineMesh";
     }
 
     List<SharedLine> testLinePool;
@@ -120,10 +112,10 @@ public class SharedLineManager : MonoBehaviour {
             float t = ((float)i / (testLine0.points.Length - 1f)) - 0.5f;
             testLine0.points[i] = new Vector3(
                 testLineLength * t,
-                Mathf.Sin(Time.time + (t * 4f)) * 2f,
+                Mathf.Sin(Time.time + (t * 4f)) * 2f * bendControl,
                 0f
             );
-            float angle = Mathf.Sin((Time.time * 2f) + (t * 4f));
+            float angle = Mathf.Sin((Time.time * 2f) + (t * 4f)) * twistControl;
             testLine0.facings[i] = Quaternion.AngleAxis(angle * 40f, Vector3.right) * Vector3.forward;
             testLine0.widths[i] = Mathf.Lerp(0.1f, testLineWidth, (Mathf.Sin((Time.time * 2f) + (t * 4f)) + 1f) * 0.5f);
         }
@@ -147,7 +139,6 @@ public class SharedLineManager : MonoBehaviour {
         lastVertCount = vertices.Count;
         mesh.SetUVs(1, colors);
         mesh.RecalculateBounds();
-        meshFilter.mesh = mesh;
     }
     public void AddLine (SharedLine line) {
         if (activeLineSet.Contains(line)) {

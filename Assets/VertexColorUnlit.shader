@@ -6,6 +6,8 @@ Shader "Sam Loeschen/Vertex Color Unlit" {
 	SubShader{
 		// Blend SrcAlpha OneMinusSrcAlpha
 		Tags { "RenderType"="Transparent" }
+
+		Cull Off
 		Pass{
 
 			CGPROGRAM

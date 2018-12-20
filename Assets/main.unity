@@ -216,12 +216,15 @@ MonoBehaviour:
   triangles: 
   points: []
   colors: []
-  activeLines: []
+  activeLineList: []
+  autoUpdate: 1
+  autoAllocate: 1
+  initialMeshSize: 512
   meshFilter: {fileID: 0}
   mesh: {fileID: 0}
-  testLineLength: 10
-  testLineWidth: 0.2
-  testLinePoints: 2
+  testLineLength: 20
+  testLineWidth: 0.5
+  testLinePoints: 100
   testLineColor: {r: 1, g: 1, b: 1, a: 1}
   fadeCurve:
     serializedVersion: 2
@@ -247,8 +250,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  spawnRate: 0.2
-  lifeTime: 1
+  spawnRate: 0.01
+  lifeTime: 0.1
 --- !u!4 &876634971
 Transform:
   m_ObjectHideFlags: 0

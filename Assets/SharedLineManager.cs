@@ -44,8 +44,13 @@ public class SharedLineManager : MonoBehaviour {
 
         testLinePool = new List<SharedLine>();
         timers = new List<float>();
-        testLine0 = new SharedLine(testLinePoints, 1f);
-        testLine1 = new SharedLine(testLinePoints, 1f);
+        testLine0 = new SharedLine();
+        testLine1 = new SharedLine();
+        testLine0.points = new Vector3[testLinePoints];
+        testLine0.widths = new float[testLinePoints];
+        testLine0.facings = new Vector3[testLinePoints];
+        AddLine(testLine0);
+        // AddLine(testLine1);
     }
 
     public void AllocateMesh () {
@@ -68,43 +73,66 @@ public class SharedLineManager : MonoBehaviour {
     int lastTriCount = 0;
 
     void Update () {
-        spawnTimer += Time.deltaTime / spawnRate;
-        if (spawnTimer >= 1f) {
-            spawnTimer = 0f;
+        // spawnTimer += Time.deltaTime / spawnRate;
+        // if (spawnTimer >= 1f) {
+        //     spawnTimer = 0f;
 
-            // try to get a line that is inactive
-            SharedLine line = null;
-            for (int i = 0; i < testLinePool.Count; i++) {
-                if (testLinePool[i].index == -1) {
-                    line = testLinePool[i];
-                    break;
-                }
-            }
-            if (line == null) { 
-                line = new SharedLine(testLinePoints, testLineWidth); 
-                testLinePool.Add(line);
-                timers.Add(0f);
-            }
-            AddLine(line);
-            Vector3 dir = UnityEngine.Random.onUnitSphere;
-            Vector3 startPoint = UnityEngine.Random.onUnitSphere * testLineLength;
-            float t = 0f;
-            for (int i = 0; i < testLinePoints; i++) {
-                t = (float) i / (testLinePoints - 1f);
-                line.points[i] = startPoint + dir * t;
-            }
-            line.Draw(Vector3.forward);
+        //     // try to get a line that is inactive
+        //     SharedLine line = null;
+        //     for (int i = 0; i < testLinePool.Count; i++) {
+        //         if (testLinePool[i].rendererIdx == -1) {
+        //             line = testLinePool[i];
+        //             break;
+        //         }
+        //     }
+        //     if (line == null) { 
+        //         line = new SharedLine(); 
+        //         line.points = new Vector3[testLinePoints];
+        //         testLinePool.Add(line);
+        //         timers.Add(0f);
+        //     }
+        //     AddLine(line);
+        //     Vector3 dir = UnityEngine.Random.onUnitSphere;
+        //     Vector3 startPoint = UnityEngine.Random.onUnitSphere * testLineLength;
+        //     float t = 0f;
+        //     for (int i = 0; i < testLinePoints; i++) {
+        //         t = (float) i / (testLinePoints - 1f);
+        //         line.points[i] = startPoint + dir * t;
+        //     }
+        //     line.Draw(Vector3.forward, testLineWidth);
+        // }
+
+        // for (int i = 0; i < testLinePool.Count; i++) {
+        //     if (testLinePool[i].rendererIdx == -1) { continue; }    
+        //     timers[i] += Time.deltaTime / lifeTime;
+        //     testLinePool[i].SetColor(testLineColor.withAlpha(fadeCurve.Evaluate(timers[i])));
+        //     if (timers[i] >= 1f) {
+        //         RemoveLine(testLinePool[i]);
+        //         timers[i] = 0f;
+        //     }
+        // }
+
+        for (int i = 0; i < testLine0.points.Length; i++) {
+            float t = ((float)i / (testLine0.points.Length - 1f)) - 0.5f;
+            testLine0.points[i] = new Vector3(
+                testLineLength * t,
+                0f,//Mathf.Sin(UnityEngine.Time.time + (t * 2f)),
+                0f
+            );
+            float angle = Mathf.Sin(t * 4f);
+            testLine0.facings[i] = Quaternion.AngleAxis(angle * 20f, Vector3.right) * Vector3.forward;
+            UnityEngine.Debug.DrawRay(testLine0.points[i], testLine0.facings[i] * 5f, Color.red);
+            testLine0.widths[i] = testLineWidth;//Mathf.Lerp(0.1f, testLineWidth, (Mathf.Sin((Time.time * 2f) + (t * 4f)) + 1f) * 0.5f);
         }
 
-        for (int i = 0; i < testLinePool.Count; i++) {
-            if (testLinePool[i].index == -1) { continue; }    
-            timers[i] += Time.deltaTime / lifeTime;
-            testLinePool[i].SetColor(testLineColor.withAlpha(fadeCurve.Evaluate(timers[i])));
-            if (timers[i] >= 1f) {
-                RemoveLine(testLinePool[i]);
-                timers[i] = 0f;
-            }
-        }
+        float a = Mathf.Sin(Time.time * 2f);
+        Vector3 facing = Quaternion.AngleAxis(a * 20f, Vector3.right) * Vector3.forward;
+
+        Stopwatch stopwatch = new Stopwatch();
+        stopwatch.Start();
+        testLine0.Draw(lineWidth: testLineWidth);
+        stopwatch.Stop();
+        UnityEngine.Debug.Log("draw ms: " + stopwatch.ElapsedTicks / 10000f);
 
         if (autoUpdate) {
             UpdateMesh();
@@ -131,34 +159,31 @@ public class SharedLineManager : MonoBehaviour {
             UnityEngine.Debug.LogError("This line is already managed by this SharedLineRenderer!");
             return;
         }
-        if (line.index > 0) {
+        if (line.rendererIdx > 0) {
             UnityEngine.Debug.LogError("This line is already managed by a different SharedLineRenderer!");
             return; 
         }
-        if (line.pointCount < 2) {
+        if (line.points.Length < 2) {
             UnityEngine.Debug.LogError("Cannot draw a line with less than two points!");
             return;
         }
 
-        int count = activeLineList.Count;
-        int pointLowerBound = 0;
+        int activeLineCount = activeLineList.Count;
         int vertexLowerBound = 0;
         int triLowerBound = 0;
-        int pointUpperBound = line.pointCount - 1;
-        int vertexUpperBound = (line.pointCount * 2) - 1;
-        int triUpperBound = ((line.pointCount - 1) * 6) - 1;
-        if (count > 0) {
-            SharedLine lastLine = activeLineList[count - 1]; 
+        int pointCount = line.points.Length;
+        int vertexUpperBound = ((line.points.Length) * 2) - 1;
+        int triUpperBound = ((line.points.Length - 1) * 6) - 1;
+        if (activeLineCount > 0) {
+            SharedLine lastLine = activeLineList[activeLineCount - 1]; 
 
-            pointLowerBound = lastLine.points.upperBound + 1;
             vertexLowerBound = lastLine.vertices.upperBound + 1;
             triLowerBound = lastLine.triangles.upperBound + 1;
 
-            pointUpperBound += pointLowerBound;
             vertexUpperBound += vertexLowerBound;  
             triUpperBound += triLowerBound;
         }
-        for (int i = pointLowerBound, set = vertexLowerBound; i <= pointUpperBound; i++, set += 2) {            
+        for (int pt = 0, vert = vertexLowerBound; pt < line.points.Length; pt++, vert += 2) {            
             points.Add(Vector3.zero);
             
             vertices.Add(Vector3.zero);
@@ -167,25 +192,25 @@ public class SharedLineManager : MonoBehaviour {
             colors.Add(Color.magenta); // haha
             colors.Add(Color.magenta);
 
-            if (i == pointUpperBound) { break; }
-            triangles.Add(set    );
-            triangles.Add(set + 1);
-            triangles.Add(set + 2);
-            triangles.Add(set + 2);
-            triangles.Add(set + 1);
-            triangles.Add(set + 3);
+            if (pt == line.points.Length - 1) { break; }
+            triangles.Add(vert    );
+            triangles.Add(vert + 1);
+            triangles.Add(vert + 2);
+            triangles.Add(vert + 2);
+            triangles.Add(vert + 1);
+            triangles.Add(vert + 3);
         }
-        line.points = new ListSlice<Vector3>(this.points, pointLowerBound, pointUpperBound);
+        
         line.vertices = new ListSlice<Vector3>(this.vertices, vertexLowerBound, vertexUpperBound);
         line.colors = new ListSlice<Vector4>(this.colors, vertexLowerBound, vertexUpperBound);
         line.triangles = new ListSlice<int>(this.triangles, triLowerBound, triUpperBound);
-        line.index = activeLineList.Count;
+        line.rendererIdx = activeLineList.Count;
         activeLineList.Add(line);
         activeLineSet.Add(line);
     }
 
     public void RemoveLine (SharedLine line) {
-        if (line.index == -1) {
+        if (line.rendererIdx == -1) {
             UnityEngine.Debug.LogError("This line is not currently managed by a SharedLineRenderer!");
             return; 
         }
@@ -193,12 +218,9 @@ public class SharedLineManager : MonoBehaviour {
             UnityEngine.Debug.LogError("This line is managed by a different SharedLineRenderer!");
             return;
         }
-        for (int i = line.index + 1; i < activeLineList.Count; i++) {
+        for (int i = line.rendererIdx + 1; i < activeLineList.Count; i++) {
 
             SharedLine otherLine = activeLineList[i];
-            otherLine.points.lowerBound -= line.points.length;
-            otherLine.points.upperBound -= line.points.length;
-
 
             otherLine.vertices.lowerBound -= line.vertices.length;
             otherLine.vertices.upperBound -= line.vertices.length;
@@ -208,139 +230,32 @@ public class SharedLineManager : MonoBehaviour {
 
             otherLine.triangles.lowerBound -= line.triangles.length;
             otherLine.triangles.upperBound -= line.triangles.length;
-            otherLine.index--;
+            otherLine.rendererIdx--;
         }
 
-        points.RemoveRange(line.points.lowerBound, line.points.length);
         vertices.RemoveRange(line.vertices.lowerBound, line.vertices.length);
         colors.RemoveRange(line.colors.lowerBound, line.colors.length);
-        int triangleShift = line.pointCount * 2;
+        int triangleShift = line.points.Length * 2;
         for (int i = line.triangles.upperBound + 1; i < triangles.Count; i++) {
             triangles[i] -= triangleShift;
         }
         triangles.RemoveRange(line.triangles.lowerBound, line.triangles.length);
-        activeLineList.RemoveAt(line.index);
+        activeLineList.RemoveAt(line.rendererIdx);
         activeLineSet.Remove(line);
-        line.index = -1;
+        line.rendererIdx = -1;
     }
 
-    public void AddPoints (SharedLine line, int pointCount) {
-        if (line.index == -1) {
-            UnityEngine.Debug.LogError("This line is not currently managed by a SharedLineRenderer!");
-            return; 
-        }
-        if (!activeLineSet.Contains(line)) {
-            UnityEngine.Debug.LogError("This line is managed by a different SharedLineRenderer!");
-            return;
-        }
-        int vertCount = pointCount * 2;
-        int triCount = (pointCount - 1) * 6;
-        for (int i = line.index + 1; i < activeLineList.Count; i++) {
-            SharedLine otherLine = activeLineList[i];
-            otherLine.points.lowerBound += pointCount;
-            otherLine.points.upperBound += pointCount;
-                
-            otherLine.vertices.lowerBound += vertCount;
-            otherLine.vertices.upperBound += vertCount;
-
-            otherLine.colors.lowerBound += vertCount;
-            otherLine.colors.upperBound += vertCount;
-
-            otherLine.triangles.lowerBound += triCount;
-            otherLine.triangles.upperBound += triCount;
-        }
-
-        // shift all preexisting triangles
-        for (int i = line.triangles.upperBound + 1; i < triangles.Count; i++) {
-            triangles[i] += vertCount;
-        }
-
-        int count = line.points.upperBound + pointCount;
-        for (int pt = line.points.upperBound, vert = line.vertices.upperBound, tri = line.triangles.upperBound; pt <= count; pt++, vert += 2, tri += 6) {            
-            points.Insert(pt, Vector3.zero);
-            
-            vertices.Insert(vert, Vector3.zero);
-            vertices.Insert(vert + 1, Vector3.zero);
-
-            colors.Insert(vert, Color.magenta);
-            colors.Insert(vert + 1, Color.magenta);
-
-            if (pt == count) break;
-            triangles.Insert(tri,     vert    );
-            triangles.Insert(tri + 1, vert + 1);
-            triangles.Insert(tri + 2, vert + 2);
-            triangles.Insert(tri + 3, vert + 2);
-            triangles.Insert(tri + 4, vert + 1);
-            triangles.Insert(tri + 5, vert + 3);
-        }
-        line.points.upperBound += pointCount;
-        line.vertices.upperBound += vertCount;
-        line.triangles.upperBound += triCount;
-    }
-
-    public void RemovePoints(SharedLine line, int pointCount) {
-        if (line.index == -1) {
-            UnityEngine.Debug.LogError("This line is not currently managed by a SharedLineRenderer!");
-            return; 
-        }
-        if (!activeLineSet.Contains(line)) {
-            UnityEngine.Debug.LogError("This line is managed by a different SharedLineRenderer!");
-            return;
-        }
-        int vertCount = pointCount * 2;
-        int triCount = (pointCount - 1) * 6;
-        for (int i = line.index + 1; i < activeLineList.Count; i++) {
-            SharedLine otherLine = activeLineList[i];
-            otherLine.points.lowerBound -= pointCount;
-            otherLine.points.upperBound -= pointCount;
-                
-            otherLine.vertices.lowerBound -= vertCount;
-            otherLine.vertices.upperBound -= vertCount;
-
-            otherLine.colors.lowerBound -= vertCount;
-            otherLine.colors.upperBound -= vertCount;
-
-            otherLine.triangles.lowerBound -= triCount;
-            otherLine.triangles.upperBound -= triCount;
-        }
-        // shift all preexisting triangles
-        for (int i = line.triangles.upperBound + 1; i < triangles.Count; i++) {
-            triangles[i] -= vertCount;
-        }
-
-        int ptIdx = line.points.upperBound - pointCount;
-        int vertIdx = line.vertices.upperBound - vertCount;
-        int triIdx = line.triangles.upperBound - triCount;
-        for (int i = line.points.upperBound - pointCount; i <= line.points.upperBound; i++) {            
-            points.RemoveAt(ptIdx);
-            vertices.RemoveRange(vertIdx, 2);
-            colors.RemoveRange(vertIdx, 2);
-
-            if (i == line.points.upperBound) break;
-            triangles.RemoveRange(triIdx, 6);
-        }
-        line.points.upperBound -= pointCount;
-        line.vertices.upperBound -= vertCount;
-        line.triangles.upperBound -= triCount;
-    }
-}
-
-
-[Serializable]
-public class SharedLine {
-    public int pointCount;
-    public ListSlice<Vector3> points;
+    [Serializable]
+    public class SharedLine {
+    public Vector3[] points;
+    public Vector3[] facings;
+    public float[] widths;
     public ListSlice<Vector3> vertices;
     public ListSlice<int> triangles;
     public ListSlice<Vector4> colors;
-    public int index = -1;
-    public float lineThickness;
+    public int rendererIdx = -1;
     public bool isActive {
-        get { return index > 0; }
-    }
-    public SharedLine (int pointCount, float lineThickness) {
-        this.pointCount = pointCount;
-        this.lineThickness = lineThickness;
+        get { return rendererIdx > 0; }
     }
     public void SetPointColor (int pointIdx, Color c) {
         int colorIdx = pointIdx * 2;
@@ -348,7 +263,7 @@ public class SharedLine {
         colors[colorIdx + 1] = c;
     }
     public void SetColor (Color c) {
-        if (index == -1) { return; }
+        if (rendererIdx == -1) { return; }
         for (int i = 0; i < colors.length; i++) {
             colors[i] = c;
         }
@@ -357,51 +272,307 @@ public class SharedLine {
     Vector3 curPt;
     Vector3 nextPt;
     Vector3 prevPt;
-    int vIdx;
-    int length;
+    Vector3 facing;
     float miterX, miterY, miterZ;
     float dirX, dirY, dirZ;
     float abX, abY, abZ;
     float bcX, bcY, bcZ;
-    public void Draw (Vector3 facing) {
-        if (index == -1) {
-            UnityEngine.Debug.LogError("This line is not currently managed by a SharedLineRenderer, call AddLine() on a SharedLineRenderer to add it!");
+    float lineWidth;
+    int vIdx;
+    int vertexCount;
+    int pointCount;
+
+    public void Draw () {
+        if (rendererIdx == -1) {
+            UnityEngine.Debug.LogError("This line is not currently managed by a SharedLineRenderer, call AddLine() on a SharedLineRenderer to add it.");
             return; 
         }
+        if (points == null) {
+            UnityEngine.Debug.LogError("The points array is null! You need to set up a points array to draw this line.");
+            return;
+        }
+        if (facings == null) {
+            UnityEngine.Debug.LogError("The facings array is null! You need to set up a facings array to draw this line without an explicit facing direction.");
+            return;
+        }
+        if (widths == null) {
+            UnityEngine.Debug.LogError("The widths array is null! You need to set up a widths array to draw this line without an explicit width.");
+        }
+
+        int vertexCount = vertices.length;
+        int pointCount = vertexCount / 2;
+        
         // do start point
+        facing = facings[0];
         curPt = points[0];
         nextPt = points[1];
+        lineWidth = widths[0];
+
         dirX = (nextPt.x - curPt.x);
         dirY = (nextPt.y - curPt.y);
         dirZ = (nextPt.z - curPt.z);
         FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
         FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
-        miterX *= lineThickness;
-        miterY *= lineThickness;
-        miterZ *= lineThickness;
+        miterX *= lineWidth;
+        miterY *= lineWidth;
+        miterZ *= lineWidth;
 
         vertices[0] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
         vertices[1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
 
         // do end point
-        length = points.length;
-        curPt = points[length - 1];
-        prevPt = points[length - 2];
+        facing = facings[pointCount - 1];
+        curPt = points[pointCount - 1];
+        prevPt = points[pointCount - 2];
+        lineWidth = widths[pointCount - 1];
+
         dirX = (curPt.x - prevPt.x);
         dirY = (curPt.y - prevPt.y);
         dirZ = (curPt.y - prevPt.z);
         FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
         FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
-        miterX *= lineThickness;
-        miterY *= lineThickness;
-        miterZ *= lineThickness;
+        miterX *= lineWidth;
+        miterY *= lineWidth;
+        miterZ *= lineWidth;
 
-        vIdx = (length - 1) * 2;
+        vIdx = vertexCount - 2;
+        vertices[vIdx] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
+        vertices[vIdx + 1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
+        
+        // do all other points
+        for (int i = 1; i < pointCount - 1; i++) {
+            facing = facings[i];
+            curPt = points[i];
+            nextPt = points[i + 1];
+            prevPt = points[i - 1];
+            lineWidth = widths[i];
+            
+            abX = (curPt.x - prevPt.x);
+            abY = (curPt.y - prevPt.y);
+            abZ = (curPt.z - prevPt.z);
+
+            bcX = (nextPt.x - curPt.x);
+            bcY = (nextPt.y - curPt.y);
+            bcZ = (nextPt.z - curPt.z);
+            
+            FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
+            FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
+            miterX *= lineWidth;
+            miterY *= lineWidth;
+            miterZ *= lineWidth;
+
+            vIdx = i * 2;
+            vertices[vIdx    ] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
+            vertices[vIdx + 1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
+        }
+    }
+
+    public void Draw (Vector3 facing) {
+        if (rendererIdx == -1) {
+            UnityEngine.Debug.LogError("This line is not currently managed by a SharedLineRenderer, call AddLine() on a SharedLineRenderer to add it.");
+            return; 
+        }
+        if (points == null) {
+            UnityEngine.Debug.LogError("The points array is null! You need to set up a points array to draw this line.");
+            return;
+        }
+        if (widths == null) {
+            UnityEngine.Debug.LogError("The facings array is null! You need to set up a widths array to draw this line without an explicit line width.");
+            return;
+        }
+
+        int vertexCount = vertices.length;
+        int pointCount = vertexCount / 2;
+
+        // do start point
+        curPt = points[0];
+        nextPt = points[1];
+        lineWidth = widths[0];
+
+        dirX = (nextPt.x - curPt.x);
+        dirY = (nextPt.y - curPt.y);
+        dirZ = (nextPt.z - curPt.z);
+        FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
+        FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
+        miterX *= lineWidth;
+        miterY *= lineWidth;
+        miterZ *= lineWidth;
+
+        vertices[0] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
+        vertices[1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
+
+        // do end point
+        curPt = points[pointCount - 1];
+        prevPt = points[pointCount - 2];
+        lineWidth = widths[pointCount - 1];
+        dirX = (curPt.x - prevPt.x);
+        dirY = (curPt.y - prevPt.y);
+        dirZ = (curPt.y - prevPt.z);
+        FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
+        FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
+        miterX *= lineWidth;
+        miterY *= lineWidth;
+        miterZ *= lineWidth;
+
+        vIdx = (pointCount - 1) * 2;
         vertices[vIdx    ] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
         vertices[vIdx + 1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
         
         // do all other points
-        for (int i = 1; i < length - 1; i++) {
+        for (int i = 1; i < pointCount - 1; i++) {
+            vIdx = i * 2;
+            curPt = points[i];
+            nextPt = points[i + 1];
+            prevPt = points[i - 1];
+            lineWidth = widths[i];
+            
+            abX = (curPt.x - prevPt.x);
+            abY = (curPt.y - prevPt.y);
+            abZ = (curPt.z - prevPt.z);
+
+            bcX = (nextPt.x - curPt.x);
+            bcY = (nextPt.y - curPt.y);
+            bcZ = (nextPt.z - curPt.z);
+
+            FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
+            FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
+            miterX *= lineWidth;
+            miterY *= lineWidth;
+            miterZ *= lineWidth;
+
+            vertices[vIdx    ] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
+            vertices[vIdx + 1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
+        }
+    }
+
+    public void Draw (float lineWidth) {
+        if (rendererIdx == -1) {
+            UnityEngine.Debug.LogError("This line is not currently managed by a SharedLineRenderer, call AddLine() on a SharedLineRenderer to add it.");
+            return; 
+        }
+        if (points == null) {
+            UnityEngine.Debug.LogError("The points array is null! You need to set up a points array to draw this line.");
+            return;
+        }
+        if (facings == null) {
+            UnityEngine.Debug.LogError("The facings array is null! You need to set up a facings array to draw this line without an explicit facing direction.");
+            return;
+        }
+
+        int vertexCount = vertices.length;
+        int pointCount = vertexCount / 2;
+
+        // do start point
+        curPt = points[0];
+        nextPt = points[1];
+        facing = facings[0];
+        dirX = (nextPt.x - curPt.x);
+        dirY = (nextPt.y - curPt.y);
+        dirZ = (nextPt.z - curPt.z);
+        FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
+        FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
+        miterX *= lineWidth;
+        miterY *= lineWidth;
+        miterZ *= lineWidth;
+
+        vertices[0] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
+        vertices[1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
+
+        // do end point
+        curPt = points[pointCount - 1];
+        prevPt = points[pointCount - 2];
+        facing = facings[pointCount - 1];
+        dirX = (curPt.x - prevPt.x);
+        dirY = (curPt.y - prevPt.y);
+        dirZ = (curPt.y - prevPt.z);
+        FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
+        FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
+        miterX *= lineWidth;
+        miterY *= lineWidth;
+        miterZ *= lineWidth;
+
+        vIdx = (pointCount - 1) * 2;
+        vertices[vIdx    ] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
+        vertices[vIdx + 1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
+        
+        // do all other points
+        for (int i = 1; i < pointCount - 1; i++) {
+            vIdx = i * 2;
+            curPt = points[i];
+            nextPt = points[i + 1];
+            prevPt = points[i - 1];
+            facing = facings[i];
+            
+            abX = (curPt.x - prevPt.x);
+            abY = (curPt.y - prevPt.y);
+            abZ = (curPt.z - prevPt.z);
+
+            bcX = (nextPt.x - curPt.x);
+            bcY = (nextPt.y - curPt.y);
+            bcZ = (nextPt.z - curPt.z);
+
+            FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
+            FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
+            miterX *= lineWidth;
+            miterY *= lineWidth;
+            miterZ *= lineWidth;
+
+            vertices[vIdx    ] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
+            vertices[vIdx + 1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
+        }
+
+        vertices[0] = vertices[2];
+        vertices[1] = vertices[3];
+        vertices[vertices.length - 1] = vertices[vertices.length - 3];
+        vertices[vertices.length - 2] = vertices[vertices.length - 4];
+    }
+
+    public void Draw (Vector3 facing, float lineWidth) {
+        if (rendererIdx == -1) {
+            UnityEngine.Debug.LogError("This line is not currently managed by a SharedLineRenderer, call AddLine() on a SharedLineRenderer to add it!");
+            return; 
+        }
+        if (points == null) {
+            UnityEngine.Debug.LogError("The points array is null! You need to set up a points array to draw this line!");
+            return;
+        }
+        int vertexCount = vertices.length;
+        int pointCount = vertexCount / 2;
+
+        // do start point
+        curPt = points[0];
+        nextPt = points[1];
+
+        dirX = (nextPt.x - curPt.x);
+        dirY = (nextPt.y - curPt.y);
+        dirZ = (nextPt.z - curPt.z);
+        FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
+        FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
+        miterX *= lineWidth;
+        miterY *= lineWidth;
+        miterZ *= lineWidth;
+
+        vertices[0] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
+        vertices[1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
+
+        // do end point
+        curPt = points[pointCount - 1];
+        prevPt = points[pointCount - 2];
+        dirX = (curPt.x - prevPt.x);
+        dirY = (curPt.y - prevPt.y);
+        dirZ = (curPt.y - prevPt.z);
+        FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
+        FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
+        miterX *= lineWidth;
+        miterY *= lineWidth;
+        miterZ *= lineWidth;
+
+        vIdx = (pointCount - 1) * 2;
+        vertices[vIdx    ] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
+        vertices[vIdx + 1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
+        
+        // do all other points
+        for (int i = 1; i < pointCount - 1; i++) {
             vIdx = i * 2;
             curPt = points[i];
             nextPt = points[i + 1];
@@ -417,14 +588,15 @@ public class SharedLine {
 
             FastCross(facing.x, facing.y, facing.z, dirX, dirY, dirZ, out miterX, out miterY, out miterZ);
             FastNormalize(miterX, miterY, miterZ, out miterX, out miterY, out miterZ);
-            miterX *= lineThickness;
-            miterY *= lineThickness;
-            miterZ *= lineThickness;
+            miterX *= lineWidth;
+            miterY *= lineWidth;
+            miterZ *= lineWidth;
 
             vertices[vIdx    ] = new Vector3(curPt.x - miterX, curPt.y - miterY, curPt.z - miterZ);
             vertices[vIdx + 1] = new Vector3(curPt.x + miterX, curPt.y + miterY, curPt.z + miterZ);
         }
     }
+    
     void FastCross (float inX1, float inY1, float inZ1, float inX2, float inY2, float inZ2, out float outX, out float outY, out float outZ) {
         outX = (inY1 * inZ2) - (inZ1 * inY2);
         outY = (inZ1 * inX2) - (inX1 * inZ2);
@@ -437,3 +609,7 @@ public class SharedLine {
         outZ = inZ / w;
     }
 }
+}
+
+
+

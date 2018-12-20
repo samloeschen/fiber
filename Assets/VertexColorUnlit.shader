@@ -4,7 +4,7 @@ Shader "Sam Loeschen/Vertex Color Unlit" {
 	Properties{
 	}
 	SubShader{
-		// Blend SrcAlpha OneMinusSrcAlpha
+		Blend SrcAlpha OneMinusSrcAlpha
 		Tags { "RenderType"="Transparent" }
 
 		Cull Off

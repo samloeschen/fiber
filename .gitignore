@@ -1,0 +1,52 @@
+# =============== #
+# Unity generated #
+# =============== #
+[Tt]emp/
+[Oo]bj/
+[Bb]uild
+/[Ll]ibrary/
+sysinfo.txt
+*.stackdump
+
+# ==== #
+# FMOD #
+# ==== #
+Assets/FMODStudioCache.asset
+Assets/StreamingAssets/ *.bank
+fmod.log
+fmod_editor.log
+ 
+# ============================================= #
+# Visual Studio / MonoDevelop / Rider generated #
+# ============================================= #
+[Ee]xported[Oo]bj/
+.vs/
+/*.userprefs
+/*.csproj
+/*.pidb
+/*.suo
+/*.sln*
+/*.user
+/*.unityproj
+/*.booproj
+/.idea*/
+ 
+# ============ #
+# OS generated #
+# ============ #
+.DS_Store*
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+[Tt]humbs.db
+[Dd]esktop.ini
+*.fobj
+fmod.log
+fmod_editor.log
+.vscode
+SilentEarth.sublime-workspace
+Assets/VSCode
+VSCode.meta
+*.apk
+*.exe

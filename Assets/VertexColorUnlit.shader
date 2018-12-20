@@ -1,6 +1,6 @@
 ﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
-Shader "Sam Loeschen/Vertex Color Unlit" {
+Shader "Line Rendering/Vertex Color Unlit" {
 	Properties{
 	}
 	SubShader{
@@ -33,7 +33,6 @@ Shader "Sam Loeschen/Vertex Color Unlit" {
 
 			float4 frag(vertexOutput input) : COLOR {
 				return input.color;
-				return half4(pow(input.color.rgb, 2.16), 1);
 			}
 			ENDCG
 		}

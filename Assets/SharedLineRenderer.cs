@@ -69,57 +69,57 @@ public class SharedLineRenderer : MonoBehaviour {
     public float twistControl = 0f;
 
     void Update () {
-        spawnTimer += Time.deltaTime / spawnRate;
-        if (spawnTimer >= 1f) {
-            spawnTimer = 0f;
+        // spawnTimer += Time.deltaTime / spawnRate;
+        // if (spawnTimer >= 1f) {
+        //     spawnTimer = 0f;
 
-            // try to get a line that is inactive
-            SharedLine line = null;
-            for (int i = 0; i < testLinePool.Count; i++) {
-                if (testLinePool[i].rendererIdx == -1) {
-                    line = testLinePool[i];
-                    break;
-                }
-            }
-            if (line == null) { 
-                line = new SharedLine(); 
-                line.points = new Vector3[2];
-                testLinePool.Add(line);
-                timers.Add(0f);
-            }
-            AddLine(line);
-            Vector3 dir = UnityEngine.Random.onUnitSphere;
-            Vector3 startPoint = UnityEngine.Random.onUnitSphere * testLineLength;
-            float t = 0f;
-            for (int i = 0; i < 2; i++) {
-                t = (float) i / (2 - 1f);
-                line.points[i] = startPoint + dir * t;
-            }
-            line.Draw(Vector3.forward, testLineWidth);
-        }
+        //     // try to get a line that is inactive
+        //     SharedLine line = null;
+        //     for (int i = 0; i < testLinePool.Count; i++) {
+        //         if (testLinePool[i].rendererIdx == -1) {
+        //             line = testLinePool[i];
+        //             break;
+        //         }
+        //     }
+        //     if (line == null) { 
+        //         line = new SharedLine(); 
+        //         line.points = new Vector3[2];
+        //         testLinePool.Add(line);
+        //         timers.Add(0f);
+        //     }
+        //     AddLine(line);
+        //     Vector3 dir = UnityEngine.Random.onUnitSphere;
+        //     Vector3 startPoint = UnityEngine.Random.onUnitSphere * testLineLength;
+        //     float t = 0f;
+        //     for (int i = 0; i < 2; i++) {
+        //         t = (float) i / (2 - 1f);
+        //         line.points[i] = startPoint + dir * t;
+        //     }
+        //     line.Draw(Vector3.forward, testLineWidth);
+        // }
 
-        for (int i = 0; i < testLinePool.Count; i++) {
-            if (testLinePool[i].rendererIdx == -1) { continue; }    
-            timers[i] += Time.deltaTime / lifeTime;
-            testLinePool[i].SetColor(testLineColor.withAlpha(fadeCurve.Evaluate(timers[i])));
-            if (timers[i] >= 1f) {
-                RemoveLine(testLinePool[i]);
-                timers[i] = 0f;
-            }
-        }
+        // for (int i = 0; i < testLinePool.Count; i++) {
+        //     if (testLinePool[i].rendererIdx == -1) { continue; }    
+        //     timers[i] += Time.deltaTime / lifeTime;
+        //     testLinePool[i].SetColor(testLineColor.withAlpha(fadeCurve.Evaluate(timers[i])));
+        //     if (timers[i] >= 1f) {
+        //         RemoveLine(testLinePool[i]);
+        //         timers[i] = 0f;
+        //     }
+        // }
 
-        for (int i = 0; i < testLine0.points.Length; i++) {
-            float t = ((float)i / (testLine0.points.Length - 1f)) - 0.5f;
-            testLine0.points[i] = new Vector3(
-                testLineLength * t,
-                Mathf.Sin(Time.time + (t * 4f)) * 2f * bendControl,
-                0f
-            );
-            float angle = Mathf.Sin((Time.time * 2f) + (t * 4f)) * twistControl;
-            testLine0.facings[i] = Quaternion.AngleAxis(angle * 40f, Vector3.right) * Vector3.forward;
-            testLine0.widths[i] = Mathf.Lerp(0.1f, testLineWidth, (Mathf.Sin((Time.time * 2f) + (t * 4f)) + 1f) * 0.5f);
-        }
-        testLine0.Draw();
+        // for (int i = 0; i < testLine0.points.Length; i++) {
+        //     float t = ((float)i / (testLine0.points.Length - 1f)) - 0.5f;
+        //     testLine0.points[i] = new Vector3(
+        //         testLineLength * t,
+        //         Mathf.Sin(Time.time + (t * 4f)) * 2f * bendControl,
+        //         0f
+        //     );
+        //     float angle = Mathf.Sin((Time.time * 2f) + (t * 4f)) * twistControl;
+        //     testLine0.facings[i] = Quaternion.AngleAxis(angle * 40f, Vector3.right) * Vector3.forward;
+        //     testLine0.widths[i] = Mathf.Lerp(0.1f, testLineWidth, (Mathf.Sin((Time.time * 2f) + (t * 4f)) + 1f) * 0.5f);
+        // }
+        // testLine0.Draw();
 
         if (autoUpdate) {
             UpdateMesh();

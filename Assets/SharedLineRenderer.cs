@@ -146,7 +146,6 @@ public class SharedLineRenderer : MonoBehaviour {
             testLine0.facings[i] = Quaternion.AngleAxis(angle * 40f, Vector3.right) * Vector3.forward;
             testLine0.widths[i] = Mathf.Lerp(0.1f, testLineWidth, (Mathf.Sin((Time.time * 2f) + (t * 4f)) + 1f) * 0.5f);
         }
-        
 
         // TODO calculate line slices here
         handles = new NativeArray<JobHandle>(activeLineList.Count, Allocator.TempJob);
@@ -169,7 +168,6 @@ public class SharedLineRenderer : MonoBehaviour {
             
         }
     }
-
 
     void LateUpdate () {
         JobHandle.CompleteAll(handles);

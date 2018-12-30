@@ -40,15 +40,28 @@ public struct WidthData : IBufferElementData
 {
     public float width;
 }
-public struct IntRange : IComponentData
+
+public struct MeshDirty : IComponentData
 {
-    public int lowerBound;
-    public int upperBound;
+    public Entity entity;
 }
-public struct EntityRef : IComponentData
+public struct LineDirty : IComponentData
 {
     public Entity entity;
 }
 
-
-
+public struct SharedLine : IComponentData
+{
+    public int vertexLowerBound;
+    public int vertexUpperBound;
+    public int vertexRange {
+        get { return vertexUpperBound - vertexLowerBound; }
+    }
+    public byte isActiveInMesh;
+    public Entity parentMeshEntity;
+}
+public struct Line : IComponentData
+{
+    public int pointCount;
+    public byte isActive;
+}

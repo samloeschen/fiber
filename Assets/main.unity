@@ -308,7 +308,7 @@ MonoBehaviour:
     y: -5
     width: 100
     height: 100
-  lineSmoothness: 500
+  lineSmoothness: 4
   noiseFrequency: 0.05
   moveSpeed: 4
   pointDist: 1
@@ -531,7 +531,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   meshFilter: {fileID: 1734803863}
-  pointCount: 10000
+  pointCount: 4
   frequency: 4
   height: 1
   length: 10

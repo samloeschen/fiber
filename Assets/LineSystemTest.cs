@@ -80,17 +80,6 @@ public class LineSystemTest : MonoBehaviour
             points[i] += offset;
             widths[i] = 0.2f + (sin(Time.time + (t * 10f)) + 1f) * 0.25f;
         }
-
-        // var activeJob = new TestPointsJob
-        // {
-        //     length = length,
-        //     points = _entityManager.GetBuffer<VertexData>(_lineEntity).Reinterpret<float3>(),
-        //     widths = _entityManager.GetBuffer<WidthData>(_lineEntity).Reinterpret<float>(),
-        //     offset = offset,
-        //     time = Time.time,
-        // };
-        // jobHandle = activeJob.Schedule();
-        // jobHandle.Complete();
     }
     void LateUpdate()
     {   

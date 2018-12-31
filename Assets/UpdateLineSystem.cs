@@ -6,7 +6,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Burst;
+using Unity.Burst;  
 using static Unity.Mathematics.math;
 
 public class UpdateSharedLineSystem : JobComponentSystem
@@ -14,6 +14,7 @@ public class UpdateSharedLineSystem : JobComponentSystem
     public JobHandle updateJobDependency;
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
+        updateJobDependency.Complete();
 
         UpdateLineJob updateLineJob = new UpdateLineJob
         {
@@ -22,7 +23,7 @@ public class UpdateSharedLineSystem : JobComponentSystem
             facingLookup = GetBufferFromEntity<FacingData>(true),
             widthLookup  = GetBufferFromEntity<WidthData>(true),
         };
-        return updateLineJob.Schedule(this, JobHandle.CombineDependencies(updateJobDependency, inputDeps));
+        return updateLineJob.Schedule(this, inputDeps);
     }
 
     public class UpdateSharedLineBarrier : BarrierSystem { }
@@ -64,8 +65,8 @@ public class UpdateSharedLineSystem : JobComponentSystem
             vertexBuffer[vIdx    ] = curPt + miter;
             vertexBuffer[vIdx + 1] = curPt - miter;
 
-            // set second point
-            int endIdx = line.pointCount - 1;
+            // set end point
+            int endIdx = pointBuffer.Length - 1;
             float3 prevPt = pointBuffer[endIdx - 1];
             curPt = pointBuffer[endIdx];
             facing = facingBuffer[endIdx];
@@ -75,7 +76,8 @@ public class UpdateSharedLineSystem : JobComponentSystem
             vertexBuffer[vIdx    ] = curPt + miter;
             vertexBuffer[vIdx + 1] = curPt - miter;
 
-            for (int i = 1; i < line.pointCount - 1; i++)
+            // set remaining points
+            for (int i = 1; i < pointBuffer.Length - 1; i++)
             {
                 curPt = pointBuffer[i];
                 nextPt = pointBuffer[i + 1];

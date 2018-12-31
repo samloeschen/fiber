@@ -55,13 +55,12 @@ public struct SharedLine : IComponentData
     public int vertexLowerBound;
     public int vertexUpperBound;
     public int vertexRange {
-        get { return vertexUpperBound - vertexLowerBound; }
+        get { return vertexUpperBound - vertexLowerBound + 1; }
     }
     public byte isActiveInMesh;
     public Entity parentMeshEntity;
 }
 public struct Line : IComponentData
 {
-    public int pointCount;
     public byte isActive;
 }

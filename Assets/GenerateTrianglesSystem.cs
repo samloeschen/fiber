@@ -15,6 +15,7 @@ public class GenerateTrianglesSystem : JobComponentSystem
     {
         public BufferArray<BatchedVertexData> batchedVertexBuffers;
         public BufferArray<BatchedTriangleData> batchedTriangleBuffers;
+        public BufferArray<VertexCountData> vertexCountBuffers;
     }
     [Inject] public BatchMeshComponentGroup batchMeshComponentGroup;
 
@@ -23,7 +24,8 @@ public class GenerateTrianglesSystem : JobComponentSystem
         var generateTrianglesJob = new GenerateTrianglesJob
         {
             batchedVertexBuffers = batchMeshComponentGroup.batchedVertexBuffers,
-            batchedTriangleBuffers = batchMeshComponentGroup.batchedTriangleBuffers
+            batchedTriangleBuffers = batchMeshComponentGroup.batchedTriangleBuffers,
+            vertexCountBuffers = batchMeshComponentGroup.vertexCountBuffers
         };
 
         int length = batchMeshComponentGroup.batchedVertexBuffers.Length;
@@ -31,22 +33,34 @@ public class GenerateTrianglesSystem : JobComponentSystem
         return generateTrianglesJob.Schedule(length, idxCount, inputDeps);
     }
 
-    // [BurstCompile]
+    [BurstCompile]
     public struct GenerateTrianglesJob : IJobParallelFor
     {
         [ReadOnly]
         public BufferArray<BatchedVertexData> batchedVertexBuffers;
+        [ReadOnly]
+        public BufferArray<VertexCountData> vertexCountBuffers;
         [NativeDisableParallelForRestriction]
         public BufferArray<BatchedTriangleData> batchedTriangleBuffers;
+
 
         public void Execute (int bufIdx)
         {
             var vertexBuffer = batchedVertexBuffers[bufIdx];
+            var vertexCountBuffer = vertexCountBuffers[bufIdx].Reinterpret<int>();
             var triangleBuffer = batchedTriangleBuffers[bufIdx].Reinterpret<int>();
 
-            triangleBuffer.Clear();
+            triangleBuffer.Clear(); 
+            int skipIdx = 0;
+            int nextSkip = vertexCountBuffer[skipIdx] - 2;
             for (int vertex = 0; vertex < vertexBuffer.Length - 2; vertex += 2)
             {
+                if(vertex == nextSkip)
+                {
+                    skipIdx++;
+                    nextSkip += vertexCountBuffer[skipIdx];
+                    continue;
+                }
                 triangleBuffer.Add(vertex    );
                 triangleBuffer.Add(vertex + 1);
                 triangleBuffer.Add(vertex + 2);

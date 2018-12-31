@@ -29,6 +29,11 @@ public struct BatchedTriangleData : IBufferElementData
 {
     public int Triangle;
 }
+[InternalBufferCapacity(0)]
+public struct VertexCountData : IBufferElementData
+{
+    public int pointCount;
+}
 
 [InternalBufferCapacity(0)]
 public struct PointData : IBufferElementData
@@ -36,11 +41,6 @@ public struct PointData : IBufferElementData
     public float3 Point;
 }
 
-[InternalBufferCapacity(0)]
-public struct EntityData : IBufferElementData
-{
-    public Entity entity;
-}
 
 [InternalBufferCapacity(0)]
 public struct FacingData : IBufferElementData
@@ -58,21 +58,6 @@ public struct MeshDirty : IComponentData
 {
     public Entity entity;
 }
-public struct LineDirty : IComponentData
-{
-    public Entity entity;
-}
-
-public struct SharedLine : IComponentData
-{
-    public int vertexLowerBound;
-    public int vertexUpperBound;
-    public int vertexRange {
-        get { return vertexUpperBound - vertexLowerBound + 1; }
-    }
-    public byte isActiveInMesh;
-    public Entity parentMeshEntity;
-}
 public struct Line : IComponentData
 {
     public byte isActive;
@@ -81,9 +66,4 @@ public struct Line : IComponentData
 public struct BatchedLine : IComponentData
 {
     public Entity batchEntity;
-}
-
-public struct PointsDirty : IComponentData
-{
-    public Entity lineEntity;
 }

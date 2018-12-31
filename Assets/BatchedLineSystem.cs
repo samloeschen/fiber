@@ -41,6 +41,7 @@ public class BatchedLineSystem : ComponentSystem
         _batchedMeshArchetype = _entityManager.CreateArchetype(
             typeof(BatchedVertexData),
             typeof(BatchedTriangleData),
+            typeof(VertexCountData),
             typeof(MeshDirty)
         );
 

@@ -15,7 +15,7 @@ public class CombineVerticesSystem : JobComponentSystem
 {
     public struct BatchedLineComponentGroup
     {
-        public BufferArray<VertexData> lineVertexData;
+        public BufferArray<VertexData> lineVertexBuffers;
         public ComponentDataArray<BatchedLine> batchedLineData;
     }
 
@@ -25,7 +25,8 @@ public class CombineVerticesSystem : JobComponentSystem
     {
         var combineVerticesJob = new CombineVerticesJob
         {
-            batchedVertexDataLookup = GetBufferFromEntity<BatchedVertexData>(isReadOnly: false),
+            batchedVertexBuffers = GetBufferFromEntity<BatchedVertexData>(isReadOnly: false),
+            vertexCountBuffers = GetBufferFromEntity<VertexCountData>(isReadOnly: false),
             componentGroup = batchedLineComponentGroup
         };
         int length = batchedLineComponentGroup.batchedLineData.Length;
@@ -38,18 +39,23 @@ public class CombineVerticesSystem : JobComponentSystem
     public struct CombineVerticesJob : IJob
     {
         [NativeDisableParallelForRestriction]
-        public BufferFromEntity<BatchedVertexData> batchedVertexDataLookup;
+        public BufferFromEntity<BatchedVertexData> batchedVertexBuffers;
+        [NativeDisableParallelForRestriction]
+        public BufferFromEntity<VertexCountData> vertexCountBuffers;
         public BatchedLineComponentGroup componentGroup;
         public void Execute ()
         {
             for (int i = 0; i < componentGroup.batchedLineData.Length; i++)
             {
                 var batchEntity = componentGroup.batchedLineData[i].batchEntity;
-                if (!batchedVertexDataLookup.Exists(batchEntity)) return;
+                if (!batchedVertexBuffers.Exists(batchEntity)) return;
 
-                var batchedVertexBuffer = batchedVertexDataLookup[batchEntity];
-                var vertexArr = componentGroup.lineVertexData[i].Reinterpret<BatchedVertexData>().ToNativeArray();
+                var batchedVertexBuffer = batchedVertexBuffers[batchEntity];
+                var vertexCountBuffer = vertexCountBuffers[batchEntity].Reinterpret<int>();
+
+                var vertexArr = componentGroup.lineVertexBuffers[i].Reinterpret<BatchedVertexData>().ToNativeArray();
                 batchedVertexBuffer.AddRange(vertexArr);
+                vertexCountBuffer.Add(vertexArr.Length);
             }
         }
     }

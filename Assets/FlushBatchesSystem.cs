@@ -16,6 +16,7 @@ public class FlushBatchedVerticesSystem : JobComponentSystem
     public struct BatchComponentGroup
     {
         public BufferArray<BatchedVertexData> batchedVertexBuffers;
+        public BufferArray<VertexCountData> vertexCountBuffers;
     }
     [Inject] public BatchComponentGroup batchedLineComponentGroup;
     protected override JobHandle OnUpdate(JobHandle inputDeps)
@@ -23,6 +24,7 @@ public class FlushBatchedVerticesSystem : JobComponentSystem
         var flushBatchedVerticesJob = new FlushBatchedVerticesJob
         {
             batchedVertexBuffers = batchedLineComponentGroup.batchedVertexBuffers,
+            vertexCountBuffers = batchedLineComponentGroup.vertexCountBuffers
         };
         int length = batchedLineComponentGroup.batchedVertexBuffers.Length;
         int idxCount = Mathf.NextPowerOfTwo(length / (SystemInfo.processorCount + 1));
@@ -33,9 +35,11 @@ public class FlushBatchedVerticesSystem : JobComponentSystem
     public struct FlushBatchedVerticesJob : IJobParallelFor
     {
         public BufferArray<BatchedVertexData> batchedVertexBuffers;
+        public BufferArray<VertexCountData> vertexCountBuffers;
         public void Execute (int i)
         {
             batchedVertexBuffers[i].Clear();
+            vertexCountBuffers[i].Clear();
         }
     }
 }

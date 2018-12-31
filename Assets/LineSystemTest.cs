@@ -16,41 +16,81 @@ public class LineSystemTest : MonoBehaviour
     public float length = 10f;
     public float3 offset;
 
-    private SharedLineSystem _sharedLineSystem;
+    private BatchedLineSystem _batchedLineSystem;
     private EntityManager _entityManager;
-    private Entity _meshEntity;
+    private static Entity _meshEntity;
     private Entity _lineEntity;
     private DynamicBuffer<float3> _pointsBuf;
     public DynamicBuffer<float> _widthBuf;
 
+    static bool createdMeshEntity = false;
+
     void OnEnable ()
     {
-        _sharedLineSystem = World.Active.GetOrCreateManager<SharedLineSystem>();
-        _meshEntity = _sharedLineSystem.CreateSharedMesh(meshFilter);
+        _batchedLineSystem = World.Active.GetOrCreateManager<BatchedLineSystem>();
+
+        if (!createdMeshEntity)
+        {
+            _meshEntity = _batchedLineSystem.CreateBatchedMesh(meshFilter);
+            createdMeshEntity = true;
+        }
+        
         _entityManager = World.Active.GetOrCreateManager<EntityManager>();
-        _lineEntity = _sharedLineSystem.CreateLineEntity(pointCount);
-        _sharedLineSystem.ActivateLine(_lineEntity, _meshEntity);
 
+        // set up our line entity and associated buffers
+        _lineEntity = _entityManager.CreateEntity(BatchedLineSystem.BatchedLineArchetype);
+        var initialPoints = new NativeArray<float3>(pointCount, Allocator.Temp);
+        var initialFacing = new NativeArray<float3>(pointCount, Allocator.Temp);
+        var initialWidths = new NativeArray<float>(pointCount, Allocator.Temp);
 
+        for (int i = 0; i < initialFacing.Length; i++) {
+            initialFacing[i] = float3(0, 0, 1);
+        }
+
+        _entityManager.GetBuffer<PointData>(_lineEntity).Reinterpret<float3>().AddRange(initialPoints);
+        _entityManager.GetBuffer<FacingData>(_lineEntity).Reinterpret<float3>().AddRange(initialFacing);
+        _entityManager.GetBuffer<WidthData>(_lineEntity).Reinterpret<float>().AddRange(initialWidths);
+
+        // make line active
+        var line = new Line
+        {
+            isActive = 1,
+        };
+        _entityManager.SetComponentData(_lineEntity, line);
+        var batchedLine = new BatchedLine
+        {
+            batchEntity = _meshEntity,
+        };
+        _entityManager.SetComponentData(_lineEntity, batchedLine);
     }
     public JobHandle jobHandle;
 
     void Update ()
     {
-        Debug.Log(_lineEntity);
-        _pointsBuf = _entityManager.GetBuffer<PointData>(_lineEntity).Reinterpret<float3>();
-        _widthBuf = _entityManager.GetBuffer<WidthData>(_lineEntity).Reinterpret<float>(); 
+        var points = _entityManager.GetBuffer<PointData>(_lineEntity).Reinterpret<float3>();
+        var widths = _entityManager.GetBuffer<WidthData>(_lineEntity).Reinterpret<float>();
+        for (int i = 0; i < points.Length; i++) {
+            float t = (float) i / (points.Length - 1f);
+            float t2 = (t * 0.5f) - 0.25f;
+            points[i] = float3(
+                t2 * length,
+                Mathf.Sin(Time.time + (t * 4)), 
+                0
+            );
+            points[i] += offset;
+            widths[i] = 0.2f + (sin(Time.time + (t * 10f)) + 1f) * 0.25f;
+        }
 
-        var activeJob = new TestPointsJob
-        {
-            length = length,
-            points = _pointsBuf,
-            widths = _widthBuf,
-            offset = offset,
-            time = Time.time,
-        };
-        jobHandle = activeJob.Schedule();
-        _sharedLineSystem.AddUpdateDependency(jobHandle);
+        // var activeJob = new TestPointsJob
+        // {
+        //     length = length,
+        //     points = _entityManager.GetBuffer<VertexData>(_lineEntity).Reinterpret<float3>(),
+        //     widths = _entityManager.GetBuffer<WidthData>(_lineEntity).Reinterpret<float>(),
+        //     offset = offset,
+        //     time = Time.time,
+        // };
+        // jobHandle = activeJob.Schedule();
+        // jobHandle.Complete();
     }
     void LateUpdate()
     {   
@@ -66,6 +106,7 @@ public class LineSystemTest : MonoBehaviour
         public DynamicBuffer<float> widths;
         public float3 offset;
         public float time;
+        public NativeSlice<float3> slice;
         public void Execute ()
         {
             for (int i = 0; i < points.Length; i++) {

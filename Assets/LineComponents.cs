@@ -11,8 +11,21 @@ public struct VertexData : IBufferElementData
 {
     public UnityEngine.Vector3 Vertex;
 }
+
 [InternalBufferCapacity(0)]
 public struct TriangleData : IBufferElementData
+{
+    public int Triangle;
+}
+
+[InternalBufferCapacity(0)]
+public struct BatchedVertexData : IBufferElementData
+{
+    public UnityEngine.Vector3 Vertex;
+}
+
+[InternalBufferCapacity(0)]
+public struct BatchedTriangleData : IBufferElementData
 {
     public int Triangle;
 }
@@ -63,4 +76,14 @@ public struct SharedLine : IComponentData
 public struct Line : IComponentData
 {
     public byte isActive;
+}
+
+public struct BatchedLine : IComponentData
+{
+    public Entity batchEntity;
+}
+
+public struct PointsDirty : IComponentData
+{
+    public Entity lineEntity;
 }

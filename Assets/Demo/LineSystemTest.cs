@@ -81,34 +81,4 @@ public class LineSystemTest : MonoBehaviour
             widths[i] = 0.2f + (sin(Time.time + (t * 10f)) + 1f) * 0.25f;
         }
     }
-    void LateUpdate()
-    {   
-        jobHandle.Complete();
-    }
-    [BurstCompile]
-    public struct TestPointsJob : IJob
-    {
-        public float length;
-        [NativeDisableParallelForRestriction]
-        public DynamicBuffer<float3> points;
-        [NativeDisableParallelForRestriction]
-        public DynamicBuffer<float> widths;
-        public float3 offset;
-        public float time;
-        public NativeSlice<float3> slice;
-        public void Execute ()
-        {
-            for (int i = 0; i < points.Length; i++) {
-                float t = (float) i / (points.Length - 1f);
-                float t2 = (t * 0.5f) - 0.25f;
-                points[i] = float3(
-                    t2 * length,
-                    Mathf.Sin(time + (t * 4)), 
-                    0
-                );
-                points[i] += offset;
-                widths[i] = 0.2f + (sin(time + (t * 10f)) + 1f) * 0.25f;
-            } 
-        }
-    }
 }

@@ -9,7 +9,13 @@ using Unity.Mathematics;
 [InternalBufferCapacity(0)]
 public struct VertexData : IBufferElementData
 {
-    public UnityEngine.Vector3 Vertex;
+    public float3 Vertex;
+}
+
+[InternalBufferCapacity(0)]
+public struct BatchedVertexData : IBufferElementData
+{
+    public float3 Vertex;
 }
 
 [InternalBufferCapacity(0)]
@@ -18,11 +24,6 @@ public struct TriangleData : IBufferElementData
     public int Triangle;
 }
 
-[InternalBufferCapacity(0)]
-public struct BatchedVertexData : IBufferElementData
-{
-    public UnityEngine.Vector3 Vertex;
-}
 
 [InternalBufferCapacity(0)]
 public struct BatchedTriangleData : IBufferElementData

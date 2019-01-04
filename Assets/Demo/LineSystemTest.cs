@@ -38,30 +38,11 @@ public class LineSystemTest : MonoBehaviour
         _entityManager = World.Active.GetOrCreateManager<EntityManager>();
 
         // set up our line entity and associated buffers
-        _lineEntity = _entityManager.CreateEntity(BatchedLineSystem.BatchedLineArchetype);
-        var initialPoints = new NativeArray<float3>(pointCount, Allocator.Temp);
-        var initialFacing = new NativeArray<float3>(pointCount, Allocator.Temp);
-        var initialWidths = new NativeArray<float>(pointCount, Allocator.Temp);
-
-        for (int i = 0; i < initialFacing.Length; i++) {
-            initialFacing[i] = float3(0, 0, 1);
-        }
-
-        _entityManager.GetBuffer<PointData>(_lineEntity).Reinterpret<float3>().AddRange(initialPoints);
-        _entityManager.GetBuffer<FacingData>(_lineEntity).Reinterpret<float3>().AddRange(initialFacing);
-        _entityManager.GetBuffer<WidthData>(_lineEntity).Reinterpret<float>().AddRange(initialWidths);
-
-        // make line active
-        var line = new Line
-        {
-            isActive = 1,
-        };
-        _entityManager.SetComponentData(_lineEntity, line);
-        var batchedLine = new BatchedLine
-        {
-            batchEntity = _meshEntity,
-        };
-        _entityManager.SetComponentData(_lineEntity, batchedLine);
+        var startPoints = new NativeArray<float3>(3, Allocator.Temp);
+        startPoints[0] = float3(0, 1, 0);
+        startPoints[1] = float3(0, 1, 0);
+        startPoints[2] = float3(0, 2, 0);
+        _lineEntity = _batchedLineSystem.CreateBatchedLine(_meshEntity, 5, float3(0, 0, 1));
     }
     public JobHandle jobHandle;
 
@@ -78,7 +59,7 @@ public class LineSystemTest : MonoBehaviour
                 0
             );
             points[i] += offset;
-            widths[i] = 0.2f + (sin(Time.time + (t * 10f)) + 1f) * 0.25f;
+            widths[0] = 0.2f + (sin(Time.time + (t * 10f)) + 1f) * 0.25f;
         }
     }
 }

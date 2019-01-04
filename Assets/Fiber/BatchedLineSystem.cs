@@ -47,8 +47,6 @@ public class BatchedLineSystem : ComponentSystem
 
         _managedMeshes = new Dictionary<Entity, ManagedMeshData>();
         _processedEntities = new HashSet<Entity>();
-
-        
     }
     protected override void OnUpdate()
     {
@@ -77,8 +75,6 @@ public class BatchedLineSystem : ComponentSystem
                 }
 
                 // update mesh arrays
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
                 var managedVertices = managedMeshData.vertices;
                 var managedTriangles = managedMeshData.triangles;
                 var mesh = managedMeshData.mesh;
@@ -99,12 +95,42 @@ public class BatchedLineSystem : ComponentSystem
 
                 managedVertices.Clear();
                 managedTriangles.Clear();
-
-                stopwatch.Stop();
-                // UnityEngine.Debug.Log("memcpy ms " + stopwatch.ElapsedTicks / 10000f);
             }
         }
         chunks.Dispose();
+    }
+
+    private const int defaultPointCount = 2;
+    private const float defaultStartWidth = 0.25f;
+    public Entity CreateBatchedLine(Entity batchMeshEntity, NativeArray<float3> initialPoints, float3 facing, float initialWidth = defaultStartWidth, bool startActive = true)
+    {
+        var lineEntity      = _entityManager.CreateEntity(BatchedLineArchetype);
+        var pointBuffer     = _entityManager.GetBuffer<PointData>(lineEntity).Reinterpret<float3>();
+        var facingBuffer    = _entityManager.GetBuffer<FacingData>(lineEntity).Reinterpret<float3>();
+        var widthBuffer     = _entityManager.GetBuffer<WidthData>(lineEntity).Reinterpret<float>();
+
+        pointBuffer.AddRange(initialPoints);
+        facingBuffer.Add(facing);
+        widthBuffer.Add(initialWidth);
+
+        var line = new Line
+        {
+            isActive = (byte)(startActive ? 1 : 0),
+        };
+        var batchedLine = new BatchedLine
+        {
+            batchEntity = batchMeshEntity
+        };
+        _entityManager.SetComponentData(lineEntity, line);
+        _entityManager.SetComponentData(lineEntity, batchedLine);
+        return lineEntity;
+    }
+    public Entity CreateBatchedLine(Entity batchMeshEntity, int initialPointCount, float3 facing, float initialWidth = defaultStartWidth, bool startActive = true)
+    {
+        var initialPoints = new NativeArray<float3>(initialPointCount, Allocator.Temp);
+        var lineEntity = CreateBatchedLine(batchMeshEntity, initialPoints, facing, initialWidth, startActive);
+        initialPoints.Dispose();
+        return lineEntity;
     }
 
     public Entity CreateBatchedMesh (MeshFilter meshFilter)

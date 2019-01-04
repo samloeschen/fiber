@@ -31,17 +31,17 @@ public class BatchedLineSystem : ComponentSystem
         BatchedLineArchetype = _entityManager.CreateArchetype(
             typeof(Line),
             typeof(BatchedLine),
-            typeof(VertexData),
-            typeof(TriangleData),
-            typeof(PointData),
-            typeof(FacingData),
-            typeof(WidthData)
+            typeof(VertexBuffer),
+            typeof(TriangleBuffer),
+            typeof(PointBuffer),
+            typeof(FacingBuffer),
+            typeof(WidthBuffer)
         );
 
         _batchedMeshArchetype = _entityManager.CreateArchetype(
-            typeof(BatchedVertexData),
-            typeof(BatchedTriangleData),
-            typeof(VertexCountData),
+            typeof(BatchedVertexBuffer),
+            typeof(BatchedTriangleBuffer),
+            typeof(VertexCountBuffer),
             typeof(MeshDirty)
         );
 
@@ -78,8 +78,8 @@ public class BatchedLineSystem : ComponentSystem
                 var managedVertices = managedMeshData.vertices;
                 var managedTriangles = managedMeshData.triangles;
                 var mesh = managedMeshData.mesh;
-                var nativeVertexBuffer = EntityManager.GetBuffer<BatchedVertexData>(meshEntity).Reinterpret<UnityEngine.Vector3>();
-                var nativeTriangleBuffer = EntityManager.GetBuffer<BatchedTriangleData>(meshEntity).Reinterpret<int>();
+                var nativeVertexBuffer = EntityManager.GetBuffer<BatchedVertexBuffer>(meshEntity).Reinterpret<UnityEngine.Vector3>();
+                var nativeTriangleBuffer = EntityManager.GetBuffer<BatchedTriangleBuffer>(meshEntity).Reinterpret<int>();
 
                 if (nativeVertexBuffer.Length == 0 || nativeTriangleBuffer.Length == 0)
                 {
@@ -105,9 +105,9 @@ public class BatchedLineSystem : ComponentSystem
     public Entity CreateBatchedLine(Entity batchMeshEntity, NativeArray<float3> initialPoints, float3 facing, float initialWidth = defaultStartWidth, bool startActive = true)
     {
         var lineEntity      = _entityManager.CreateEntity(BatchedLineArchetype);
-        var pointBuffer     = _entityManager.GetBuffer<PointData>(lineEntity).Reinterpret<float3>();
-        var facingBuffer    = _entityManager.GetBuffer<FacingData>(lineEntity).Reinterpret<float3>();
-        var widthBuffer     = _entityManager.GetBuffer<WidthData>(lineEntity).Reinterpret<float>();
+        var pointBuffer     = _entityManager.GetBuffer<PointBuffer>(lineEntity).Reinterpret<float3>();
+        var facingBuffer    = _entityManager.GetBuffer<FacingBuffer>(lineEntity).Reinterpret<float3>();
+        var widthBuffer     = _entityManager.GetBuffer<WidthBuffer>(lineEntity).Reinterpret<float>();
 
         pointBuffer.AddRange(initialPoints);
         facingBuffer.Add(facing);

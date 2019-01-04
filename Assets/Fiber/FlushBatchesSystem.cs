@@ -15,8 +15,8 @@ public class FlushBatchedVerticesSystem : JobComponentSystem
 {
     public struct BatchComponentGroup
     {
-        public BufferArray<BatchedVertexData> batchedVertexBuffers;
-        public BufferArray<VertexCountData> vertexCountBuffers;
+        public BufferArray<BatchedVertexBuffer> batchedVertexBuffers;
+        public BufferArray<VertexCountBuffer> vertexCountBuffers;
     }
     [Inject] public BatchComponentGroup batchedLineComponentGroup;
     protected override JobHandle OnUpdate(JobHandle inputDeps)
@@ -34,8 +34,9 @@ public class FlushBatchedVerticesSystem : JobComponentSystem
     [BurstCompile]
     public struct FlushBatchedVerticesJob : IJobParallelFor
     {
-        public BufferArray<BatchedVertexData> batchedVertexBuffers;
-        public BufferArray<VertexCountData> vertexCountBuffers;
+        public BufferArray<BatchedVertexBuffer> batchedVertexBuffers;
+        public BufferArray<VertexCountBuffer> vertexCountBuffers;
+        public BufferArray<BatchQueue> entityBatchBuffers;
         public void Execute (int i)
         {
             batchedVertexBuffers[i].Clear();

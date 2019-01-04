@@ -48,8 +48,8 @@ public class LineSystemTest : MonoBehaviour
 
     void Update ()
     {
-        var points = _entityManager.GetBuffer<PointData>(_lineEntity).Reinterpret<float3>();
-        var widths = _entityManager.GetBuffer<WidthData>(_lineEntity).Reinterpret<float>();
+        var points = _entityManager.GetBuffer<PointBuffer>(_lineEntity).Reinterpret<float3>();
+        var widths = _entityManager.GetBuffer<WidthBuffer>(_lineEntity).Reinterpret<float>();
         for (int i = 0; i < points.Length; i++) {
             float t = (float) i / (points.Length - 1f);
             float t2 = (t * 0.5f) - 0.25f;

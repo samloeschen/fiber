@@ -7,52 +7,57 @@ using Unity.Entities;
 using Unity.Mathematics;
 
 [InternalBufferCapacity(0)]
-public struct VertexData : IBufferElementData
+public struct VertexBuffer : IBufferElementData
 {
     public float3 Vertex;
 }
 
 [InternalBufferCapacity(0)]
-public struct BatchedVertexData : IBufferElementData
+public struct BatchedVertexBuffer : IBufferElementData
 {
     public float3 Vertex;
 }
 
 [InternalBufferCapacity(0)]
-public struct TriangleData : IBufferElementData
+public struct TriangleBuffer : IBufferElementData
 {
     public int Triangle;
 }
 
 
 [InternalBufferCapacity(0)]
-public struct BatchedTriangleData : IBufferElementData
+public struct BatchedTriangleBuffer : IBufferElementData
 {
     public int Triangle;
 }
 [InternalBufferCapacity(0)]
-public struct VertexCountData : IBufferElementData
+public struct VertexCountBuffer : IBufferElementData
 {
     public int pointCount;
 }
 
 [InternalBufferCapacity(0)]
-public struct PointData : IBufferElementData
+public struct PointBuffer : IBufferElementData
 {
     public float3 Point;
 }
 
-
 [InternalBufferCapacity(0)]
-public struct FacingData : IBufferElementData
+public struct FacingBuffer : IBufferElementData
 {
     public float3 Facing;
 }
 
 [InternalBufferCapacity(0)]
-public struct WidthData : IBufferElementData
+public struct WidthBuffer : IBufferElementData
 {
     public float width;
+}
+
+[InternalBufferCapacity(0)]
+public struct BatchQueue : IBufferElementData
+{
+    public Entity entity;
 }
 
 public struct MeshDirty : IComponentData

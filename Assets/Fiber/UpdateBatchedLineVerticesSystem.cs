@@ -16,26 +16,26 @@ public class UpdateBatchedLineVerticesSystem : JobComponentSystem
     {
         var updateBatchedLinedPointsJob = new UpdateBatchedLineVerticesJob
         {
-            vertexBuffers       = GetBufferFromEntity<VertexData>(isReadOnly: false),
-            pointBuffers        = GetBufferFromEntity<PointData>(isReadOnly: true),
-            facingBuffers       = GetBufferFromEntity<FacingData>(isReadOnly: true),
-            widthBuffers        = GetBufferFromEntity<WidthData>(isReadOnly: true)
+            vertexBuffers       = GetBufferFromEntity<VertexBuffer>(isReadOnly: false),
+            pointBuffers        = GetBufferFromEntity<PointBuffer>(isReadOnly: true),
+            facingBuffers       = GetBufferFromEntity<FacingBuffer>(isReadOnly: true),
+            widthBuffers        = GetBufferFromEntity<WidthBuffer>(isReadOnly: true)
         };
         return updateBatchedLinedPointsJob.Schedule(this, inputDeps);
     }
 
     [BurstCompile]
-    [RequireComponentTag(typeof(VertexData), typeof(TriangleData), typeof(PointData), typeof(FacingData), typeof(WidthData))]
+    [RequireComponentTag(typeof(VertexBuffer), typeof(TriangleBuffer), typeof(PointBuffer), typeof(FacingBuffer), typeof(WidthBuffer))]
     public struct UpdateBatchedLineVerticesJob : IJobProcessComponentDataWithEntity<Line, BatchedLine>
     {
         [NativeDisableParallelForRestriction]
-        public BufferFromEntity<VertexData> vertexBuffers;
+        public BufferFromEntity<VertexBuffer> vertexBuffers;
         [ReadOnly]
-        public BufferFromEntity<PointData> pointBuffers;
+        public BufferFromEntity<PointBuffer> pointBuffers;
         [ReadOnly]
-        public BufferFromEntity<FacingData> facingBuffers;
+        public BufferFromEntity<FacingBuffer> facingBuffers;
         [ReadOnly]
-        public BufferFromEntity<WidthData> widthBuffers;
+        public BufferFromEntity<WidthBuffer> widthBuffers;
 
         public void Execute(Entity lineEntity, int jobIdx, ref Line line, ref BatchedLine batchedLine)
         {

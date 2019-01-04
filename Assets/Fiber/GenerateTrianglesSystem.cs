@@ -13,9 +13,9 @@ public class GenerateTrianglesSystem : JobComponentSystem
 {   
     public struct BatchMeshComponentGroup
     {
-        public BufferArray<BatchedVertexData> batchedVertexBuffers;
-        public BufferArray<BatchedTriangleData> batchedTriangleBuffers;
-        public BufferArray<VertexCountData> vertexCountBuffers;
+        public BufferArray<BatchedVertexBuffer> batchedVertexBuffers;
+        public BufferArray<BatchedTriangleBuffer> batchedTriangleBuffers;
+        public BufferArray<VertexCountBuffer> vertexCountBuffers;
     }
     [Inject] public BatchMeshComponentGroup batchMeshComponentGroup;
 
@@ -37,11 +37,11 @@ public class GenerateTrianglesSystem : JobComponentSystem
     public struct GenerateTrianglesJob : IJobParallelFor
     {
         [ReadOnly]
-        public BufferArray<BatchedVertexData> batchedVertexBuffers;
+        public BufferArray<BatchedVertexBuffer> batchedVertexBuffers;
         [ReadOnly]
-        public BufferArray<VertexCountData> vertexCountBuffers;
+        public BufferArray<VertexCountBuffer> vertexCountBuffers;
         [NativeDisableParallelForRestriction]
-        public BufferArray<BatchedTriangleData> batchedTriangleBuffers;
+        public BufferArray<BatchedTriangleBuffer> batchedTriangleBuffers;
 
 
         public void Execute (int bufIdx)

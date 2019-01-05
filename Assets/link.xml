@@ -1,0 +1,8 @@
+<linker>
+        <assembly fullname="UnityEngine.CoreModule">
+                <namespace fullname="UnityEngine">
+                        <type fullname="NoAllocHelpers" preserve="all"/>
+                </namespace>
+        </assembly>
+        <assembly fullname="Unity.Entities.Hybrid" preserve="all"/>
+</linker>

@@ -11,7 +11,6 @@ using System.Diagnostics;
 
 using static Unity.Mathematics.math;
 
-[UpdateAfter(typeof(GenerateTrianglesSystem))]
 public class BatchedLineSystem : ComponentSystem
 {
     public static EntityArchetype BatchedLineArchetype;
@@ -32,7 +31,6 @@ public class BatchedLineSystem : ComponentSystem
             typeof(Line),
             typeof(BatchedLine),
             typeof(VertexBuffer),
-            typeof(TriangleBuffer),
             typeof(PointBuffer),
             typeof(FacingBuffer),
             typeof(WidthBuffer)
@@ -85,7 +83,6 @@ public class BatchedLineSystem : ComponentSystem
                 {
                     continue;
                 }
-                
                 managedVertices.AddRange(nativeVertexBuffer);
                 managedTriangles.AddRange(nativeTriangleBuffer);
                 

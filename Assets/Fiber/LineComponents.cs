@@ -24,7 +24,6 @@ public struct TriangleBuffer : IBufferElementData
     public int Triangle;
 }
 
-
 [InternalBufferCapacity(0)]
 public struct BatchedTriangleBuffer : IBufferElementData
 {
@@ -66,7 +65,8 @@ public struct MeshDirty : IComponentData
 }
 public struct Line : IComponentData
 {
-    public byte isActive;
+public byte isActive;
+public Entity entity;
 }
 
 public struct BatchedLine : IComponentData

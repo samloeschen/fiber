@@ -50,7 +50,8 @@ public class GenerateTrianglesSystem : JobComponentSystem
             var vertexCountBuffer = vertexCountBuffers[bufIdx].Reinterpret<int>();
             var triangleBuffer = batchedTriangleBuffers[bufIdx].Reinterpret<int>();
 
-            triangleBuffer.Clear(); 
+            if (vertexBuffer.Length < 4) return;
+
             int skipIdx = 0;
             int nextSkip = vertexCountBuffer[skipIdx] - 2;
             for (int vertex = 0; vertex < vertexBuffer.Length - 2; vertex += 2)

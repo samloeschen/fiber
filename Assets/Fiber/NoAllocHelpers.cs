@@ -23,8 +23,7 @@ public static class NoAllocHelpers
         {
             var ass = Assembly.GetAssembly(typeof(Mesh)); // any class in UnityEngine
             var type = ass.GetType("UnityEngine.NoAllocHelpers");
-            var methodInfo = type.GetMethod("ExtractArrayFromListT", BindingFlags.Static | BindingFlags.Public)
-                .MakeGenericMethod(typeof(T));
+            var methodInfo = type.GetMethod("ExtractArrayFromListT", BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(typeof(T));
 
             obj = ExtractArrayFromListTDelegates[typeof(T)] = Delegate.CreateDelegate(typeof(Func<List<T>, T[]>), methodInfo);
         }

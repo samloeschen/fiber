@@ -9,23 +9,23 @@ using Unity.Mathematics;
 using Unity.Burst;  
 using static Unity.Mathematics.math;
 
-[UpdateBefore(typeof(UnityEngine.Experimental.PlayerLoop.PreLateUpdate))]
+[UpdateAfter(typeof(UnityEngine.Experimental.PlayerLoop.PreUpdate))]
 public class UpdateBatchedLineVerticesSystem : JobComponentSystem
 {
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
         var updateBatchedLinedPointsJob = new UpdateBatchedLineVerticesJob
         {
-            vertexBuffers       = GetBufferFromEntity<VertexBuffer>(isReadOnly: false),
-            pointBuffers        = GetBufferFromEntity<PointBuffer>(isReadOnly: true),
-            facingBuffers       = GetBufferFromEntity<FacingBuffer>(isReadOnly: true),
-            widthBuffers        = GetBufferFromEntity<WidthBuffer>(isReadOnly: true)
+            vertexBuffers       = GetBufferFromEntity<VertexBuffer> (isReadOnly: false),
+            pointBuffers        = GetBufferFromEntity<PointBuffer>  (isReadOnly:  true),
+            facingBuffers       = GetBufferFromEntity<FacingBuffer> (isReadOnly: true),
+            widthBuffers        = GetBufferFromEntity<WidthBuffer>  (isReadOnly:  true)
         };
         return updateBatchedLinedPointsJob.Schedule(this, inputDeps);
     }
 
     [BurstCompile]
-    [RequireComponentTag(typeof(VertexBuffer), typeof(TriangleBuffer), typeof(PointBuffer), typeof(FacingBuffer), typeof(WidthBuffer))]
+    [RequireComponentTag(typeof(VertexBuffer), typeof(PointBuffer), typeof(FacingBuffer), typeof(WidthBuffer))]
     public struct UpdateBatchedLineVerticesJob : IJobProcessComponentDataWithEntity<Line, BatchedLine>
     {
         [NativeDisableParallelForRestriction]
@@ -51,13 +51,12 @@ public class UpdateBatchedLineVerticesSystem : JobComponentSystem
             if (widthBuffer.Length < 1) return;
 
             var vertexBuffer = vertexBuffers[lineEntity].Reinterpret<float3>();
-            vertexBuffer.Clear();
 
             // set first point
             float3 curPt        = pointBuffer[0];
             float3 nextPt       = pointBuffer[1];
             float3 facing       = facingBuffer[0];
-            float3 dir          = normalize(nextPt - curPt);
+            float3 dir          = (nextPt - curPt);
             float width         = widthBuffer[0];
             float3 miter        = normalize(cross(dir, facing)) * widthBuffer[0];
 
@@ -83,8 +82,8 @@ public class UpdateBatchedLineVerticesSystem : JobComponentSystem
                 curPt               = pointBuffer[i];
                 nextPt              = pointBuffer[i + 1];
                 prevPt              = pointBuffer[i - 1];
-                ab                  = normalize(curPt - prevPt);
-                bc                  = normalize(nextPt - curPt);
+                ab                  = (curPt - prevPt);
+                bc                  = (nextPt - curPt);
                 miter               = normalize(cross(ab + bc, facing)) * width;
 
                 vertexBuffer.Add(curPt + miter);
@@ -95,7 +94,7 @@ public class UpdateBatchedLineVerticesSystem : JobComponentSystem
             prevPt          = pointBuffer[pointRange - 1];
             curPt           = pointBuffer[pointRange];
             facing          = facingBuffer[facingBuffer.Length - 1];
-            dir             = normalize(curPt - prevPt);
+            dir             = (curPt - prevPt);
             miter           = normalize(cross(dir, facing)) * widthBuffer[widthBuffer.Length - 1];
             int vIdx        = vertexBuffer.Length - 2;
 

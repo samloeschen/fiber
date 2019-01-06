@@ -10,7 +10,7 @@ using Unity.Burst;
 using UnityEngine.Experimental;
 using static Unity.Mathematics.math;
 
-[UpdateAfter(typeof(CombineVerticesSystem))]
+[UpdateAfter(typeof(UpdateBatchedLineVerticesSystem))]
 public class FlushLineVerticesSystem : JobComponentSystem
 {
     protected override JobHandle OnUpdate(JobHandle inputDeps)

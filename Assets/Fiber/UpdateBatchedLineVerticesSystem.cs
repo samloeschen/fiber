@@ -9,7 +9,7 @@ using Unity.Mathematics;
 using Unity.Burst;  
 using static Unity.Mathematics.math;
 
-[UpdateAfter(typeof(UnityEngine.Experimental.PlayerLoop.PreUpdate))]
+[UpdateAfter(typeof(UnityEngine.Experimental.PlayerLoop.PreLateUpdate))]
 public class UpdateBatchedLineVerticesSystem : JobComponentSystem
 {
     protected override JobHandle OnUpdate(JobHandle inputDeps)
@@ -53,53 +53,53 @@ public class UpdateBatchedLineVerticesSystem : JobComponentSystem
             var vertexBuffer = vertexBuffers[lineEntity].Reinterpret<float3>();
 
             // set first point
-            float3 curPt        = pointBuffer[0];
-            float3 nextPt       = pointBuffer[1];
-            float3 facing       = facingBuffer[0];
-            float3 dir          = (nextPt - curPt);
+            float4 curPt        = float4(pointBuffer[0], 0);
+            float4 nextPt       = float4(pointBuffer[1], 0);
+            float4 facing       = float4(facingBuffer[0], 0);
+            float4 dir          = normalize(nextPt - curPt);
             float width         = widthBuffer[0];
-            float3 miter        = normalize(cross(dir, facing)) * widthBuffer[0];
+            float3 miter        = normalize(cross(dir.xyz, facing.xyz)) * widthBuffer[0];
 
-            vertexBuffer.Add(curPt + miter);
-            vertexBuffer.Add(curPt - miter);
+            vertexBuffer.Add(curPt.xyz + miter);
+            vertexBuffer.Add(curPt.xyz - miter);
             
             // set remaining points
             int pointRange          = pointBuffer.Length - 1;
             float normalizedIdx     = 0f;
             int facingIdx           = 0;
             int widthIdx            = 0;
-            float3 prevPt           = float3(0);
-            float3 ab               = float3(0);
-            float3 bc               = float3(0);
+            float4 prevPt           = float4(0);
+            float4 ab               = float4(0);
+            float4 bc               = float4(0);
 
             for (int i = 1; i < pointRange; i++)
             {
                 normalizedIdx       = (float)i / pointRange;
                 facingIdx           = (int)floor((facingBuffer.Length - 1f) * normalizedIdx);
                 widthIdx            = (int)floor((widthBuffer.Length - 1f) * normalizedIdx);
-                facing              = facingBuffer[facingIdx];
+                facing              = float4(facingBuffer[facingIdx], 0);
                 width               = widthBuffer[widthIdx];
-                curPt               = pointBuffer[i];
-                nextPt              = pointBuffer[i + 1];
-                prevPt              = pointBuffer[i - 1];
-                ab                  = (curPt - prevPt);
-                bc                  = (nextPt - curPt);
-                miter               = normalize(cross(ab + bc, facing)) * width;
+                curPt               = float4(pointBuffer[i], 0);
+                nextPt              = float4(pointBuffer[i + 1], 0);
+                prevPt              = float4(pointBuffer[i - 1], 0);
+                ab                  = normalize(curPt - prevPt);
+                bc                  = normalize(nextPt - curPt);
+                miter               = normalize(cross((ab + bc).xyz, facing.xyz)) * width;
 
-                vertexBuffer.Add(curPt + miter);
-                vertexBuffer.Add(curPt - miter);
+                vertexBuffer.Add(curPt.xyz + miter);
+                vertexBuffer.Add(curPt.xyz - miter);
             }
             
             // set end point
-            prevPt          = pointBuffer[pointRange - 1];
-            curPt           = pointBuffer[pointRange];
-            facing          = facingBuffer[facingBuffer.Length - 1];
+            prevPt          = float4(pointBuffer[pointRange - 1], 0);
+            curPt           = float4(pointBuffer[pointRange], 0);
+            facing          = float4(facingBuffer[facingBuffer.Length - 1], 0);
             dir             = (curPt - prevPt);
-            miter           = normalize(cross(dir, facing)) * widthBuffer[widthBuffer.Length - 1];
+            miter           = normalize(cross(dir.xyz, facing.xyz)) * widthBuffer[widthBuffer.Length - 1];
             int vIdx        = vertexBuffer.Length - 2;
 
-            vertexBuffer.Add(curPt + miter);
-            vertexBuffer.Add(curPt - miter);
+            vertexBuffer.Add(curPt.xyz + miter);
+            vertexBuffer.Add(curPt.xyz - miter);
         }
     }
 }

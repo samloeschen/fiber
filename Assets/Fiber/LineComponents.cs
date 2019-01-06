@@ -18,14 +18,9 @@ public struct BatchedVertexBuffer : IBufferElementData
     public float3 Vertex;
 }
 
-[InternalBufferCapacity(0)]
-public struct TriangleBuffer : IBufferElementData
-{
-    public int Triangle;
-}
 
 [InternalBufferCapacity(0)]
-public struct BatchedTriangleBuffer : IBufferElementData
+public struct TriangleBuffer : IBufferElementData
 {
     public int Triangle;
 }
@@ -54,7 +49,7 @@ public struct WidthBuffer : IBufferElementData
 }
 
 [InternalBufferCapacity(0)]
-public struct BatchQueue : IBufferElementData
+public struct EntityBuffer : IBufferElementData
 {
     public Entity entity;
 }
@@ -65,11 +60,12 @@ public struct MeshDirty : IComponentData
 }
 public struct Line : IComponentData
 {
-public byte isActive;
-public Entity entity;
+    public byte isActive;
+    public Entity entity;
 }
 
 public struct BatchedLine : IComponentData
 {
     public Entity batchEntity;
+    public byte isBatched;
 }

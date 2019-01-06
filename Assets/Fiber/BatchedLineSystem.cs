@@ -38,8 +38,9 @@ public class BatchedLineSystem : ComponentSystem
 
         _batchedMeshArchetype = _entityManager.CreateArchetype(
             typeof(BatchedVertexBuffer),
-            typeof(BatchedTriangleBuffer),
+            typeof(TriangleBuffer),
             typeof(VertexCountBuffer),
+            typeof(EntityBuffer),
             typeof(MeshDirty)
         );
 
@@ -77,7 +78,7 @@ public class BatchedLineSystem : ComponentSystem
                 var managedTriangles = managedMeshData.triangles;
                 var mesh = managedMeshData.mesh;
                 var nativeVertexBuffer = EntityManager.GetBuffer<BatchedVertexBuffer>(meshEntity).Reinterpret<UnityEngine.Vector3>();
-                var nativeTriangleBuffer = EntityManager.GetBuffer<BatchedTriangleBuffer>(meshEntity).Reinterpret<int>();
+                var nativeTriangleBuffer = EntityManager.GetBuffer<TriangleBuffer>(meshEntity).Reinterpret<int>();
 
                 if (nativeVertexBuffer.Length == 0 || nativeTriangleBuffer.Length == 0)
                 {

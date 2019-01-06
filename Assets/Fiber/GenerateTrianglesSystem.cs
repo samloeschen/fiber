@@ -14,7 +14,7 @@ public class GenerateTrianglesSystem : JobComponentSystem
     public struct BatchMeshComponentGroup
     {
         public BufferArray<BatchedVertexBuffer> batchedVertexBuffers;
-        public BufferArray<BatchedTriangleBuffer> batchedTriangleBuffers;
+        public BufferArray<TriangleBuffer> batchedTriangleBuffers;
         public BufferArray<VertexCountBuffer> vertexCountBuffers;
     }
     [Inject] public BatchMeshComponentGroup batchMeshComponentGroup;
@@ -41,7 +41,7 @@ public class GenerateTrianglesSystem : JobComponentSystem
         [ReadOnly]
         public BufferArray<VertexCountBuffer> vertexCountBuffers;
         [NativeDisableParallelForRestriction]
-        public BufferArray<BatchedTriangleBuffer> batchedTriangleBuffers;
+        public BufferArray<TriangleBuffer> batchedTriangleBuffers;
 
 
         public void Execute (int bufIdx)

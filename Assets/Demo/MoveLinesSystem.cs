@@ -22,16 +22,16 @@ public class MoveLinesSystem : JobComponentSystem {
     }
 
     [BurstCompile]
-    [RequireComponentTag(typeof(PointBuffer))]
-    public struct MoveLinesJob : IJobProcessComponentDataWithEntity<Line, DemoLine>
+    public struct MoveLinesJob : IJobProcessComponentDataWithEntity<DemoLine>
     {
         [NativeDisableParallelForRestriction]
         public BufferFromEntity<PointBuffer> pointBuffers;
         public float deltaTime;
         public const float noiseScale = 0.1f;
         public const float newPointDist = 0.15f;
-        public void Execute(Entity lineEntity, int jobIdx, [ReadOnly]ref Line line, [ReadOnly]ref DemoLine demoLine)
+        public void Execute(Entity lineEntity, int jobIdx, [ReadOnly]ref DemoLine demoLine)
         {
+            
             var pointBuffer = pointBuffers[lineEntity].Reinterpret<float3>();
             float3 linePos = pointBuffer[pointBuffer.Length - 1];
             if (length(linePos - pointBuffer[pointBuffer.Length - 2]) > newPointDist)

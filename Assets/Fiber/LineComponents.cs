@@ -7,17 +7,10 @@ using Unity.Entities;
 using Unity.Mathematics;
 
 [InternalBufferCapacity(0)]
-public struct VertexBuffer : IBufferElementData
+public struct EntityBuffer : IBufferElementData
 {
-    public float3 Vertex;
+    public Entity entity;
 }
-
-[InternalBufferCapacity(0)]
-public struct BatchedVertexBuffer : IBufferElementData
-{
-    public float3 Vertex;
-}
-
 
 [InternalBufferCapacity(0)]
 public struct TriangleBuffer : IBufferElementData
@@ -30,42 +23,41 @@ public struct VertexCountBuffer : IBufferElementData
     public int pointCount;
 }
 
-[InternalBufferCapacity(0)]
+[InternalBufferCapacity(128)]
 public struct PointBuffer : IBufferElementData
 {
     public float3 Point;
 }
 
-[InternalBufferCapacity(0)]
+[InternalBufferCapacity(128)]
 public struct FacingBuffer : IBufferElementData
 {
     public float3 Facing;
 }
 
-[InternalBufferCapacity(0)]
+[InternalBufferCapacity(128)]
 public struct WidthBuffer : IBufferElementData
 {
     public float width;
 }
 
-[InternalBufferCapacity(0)]
-public struct EntityBuffer : IBufferElementData
+[InternalBufferCapacity(256)]
+public struct VertexBuffer : IBufferElementData
+{
+    public float3 Vertex;
+}
+
+public struct MarkUpdate : IComponentData
 {
     public Entity entity;
 }
 
-public struct MeshDirty : IComponentData
+public struct MarkStatic : IComponentData
 {
-    public Entity entity;
-}
-public struct Line : IComponentData
-{
-    public byte isActive;
     public Entity entity;
 }
 
-public struct BatchedLine : IComponentData
+public struct MeshAssigner : IComponentData
 {
-    public Entity batchEntity;
-    public byte isBatched;
+    public Entity targetMesh;
 }

@@ -9,24 +9,27 @@ using Unity.Mathematics;
 using Unity.Burst;  
 using static Unity.Mathematics.math;
 
-[UpdateAfter(typeof(UnityEngine.Experimental.PlayerLoop.PreLateUpdate))]
-public class UpdateBatchedLineVerticesSystem : JobComponentSystem
+using System.Diagnostics;
+
+[UpdateAfter(typeof(MarkUpdateSystem))]
+[UpdateBefore(typeof(GenerateMeshSystem))]
+public class GenerateVerticesSystem : JobComponentSystem
 {
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
-        var updateBatchedLinedPointsJob = new UpdateBatchedLineVerticesJob
+        var updateBatchedLinedPointsJob = new GenerateVerticesJob
         {
             vertexBuffers       = GetBufferFromEntity<VertexBuffer> (isReadOnly: false),
-            pointBuffers        = GetBufferFromEntity<PointBuffer>  (isReadOnly:  true),
+            pointBuffers        = GetBufferFromEntity<PointBuffer>  (isReadOnly: true),
             facingBuffers       = GetBufferFromEntity<FacingBuffer> (isReadOnly: true),
-            widthBuffers        = GetBufferFromEntity<WidthBuffer>  (isReadOnly:  true)
+            widthBuffers        = GetBufferFromEntity<WidthBuffer>  (isReadOnly: true)
         };
         return updateBatchedLinedPointsJob.Schedule(this, inputDeps);
     }
 
     [BurstCompile]
     [RequireComponentTag(typeof(VertexBuffer), typeof(PointBuffer), typeof(FacingBuffer), typeof(WidthBuffer))]
-    public struct UpdateBatchedLineVerticesJob : IJobProcessComponentDataWithEntity<Line, BatchedLine>
+    public struct GenerateVerticesJob : IJobProcessComponentData<MarkUpdate>
     {
         [NativeDisableParallelForRestriction]
         public BufferFromEntity<VertexBuffer> vertexBuffers;
@@ -36,11 +39,10 @@ public class UpdateBatchedLineVerticesSystem : JobComponentSystem
         public BufferFromEntity<FacingBuffer> facingBuffers;
         [ReadOnly]
         public BufferFromEntity<WidthBuffer> widthBuffers;
-
-        public void Execute(Entity lineEntity, int jobIdx, ref Line line, ref BatchedLine batchedLine)
+        
+        public void Execute([ReadOnly] ref MarkUpdate markUpdate)
         {
-            if (line.isActive == 0) return;
-
+            var lineEntity = markUpdate.entity;
             var pointBuffer = pointBuffers[lineEntity].Reinterpret<float3>();
             if (pointBuffer.Length < 2) return;
 
@@ -55,11 +57,11 @@ public class UpdateBatchedLineVerticesSystem : JobComponentSystem
             // set first point
             float4 curPt        = float4(pointBuffer[0], 0);
             float4 nextPt       = float4(pointBuffer[1], 0);
-            float4 facing       = float4(facingBuffer[0], 0);
-            float4 dir          = normalize(nextPt - curPt);
-            float width         = widthBuffer[0];
-            float3 miter        = normalize(cross(dir.xyz, facing.xyz)) * widthBuffer[0];
+            float3 facing       = facingBuffer[0];
+            float3 dir          = normalize(nextPt - curPt).xyz;
 
+            float width         = widthBuffer[0];
+            float3 miter        = normalizesafe(cross(dir, facing)) * widthBuffer[0];
             vertexBuffer.Add(curPt.xyz + miter);
             vertexBuffer.Add(curPt.xyz - miter);
             
@@ -69,23 +71,18 @@ public class UpdateBatchedLineVerticesSystem : JobComponentSystem
             int facingIdx           = 0;
             int widthIdx            = 0;
             float4 prevPt           = float4(0);
-            float4 ab               = float4(0);
-            float4 bc               = float4(0);
-
             for (int i = 1; i < pointRange; i++)
             {
-                normalizedIdx       = (float)i / pointRange;
-                facingIdx           = (int)floor((facingBuffer.Length - 1f) * normalizedIdx);
-                widthIdx            = (int)floor((widthBuffer.Length - 1f) * normalizedIdx);
-                facing              = float4(facingBuffer[facingIdx], 0);
-                width               = widthBuffer[widthIdx];
-                curPt               = float4(pointBuffer[i], 0);
-                nextPt              = float4(pointBuffer[i + 1], 0);
-                prevPt              = float4(pointBuffer[i - 1], 0);
-                ab                  = normalize(curPt - prevPt);
-                bc                  = normalize(nextPt - curPt);
-                miter               = normalize(cross((ab + bc).xyz, facing.xyz)) * width;
-
+                normalizedIdx   = (float)i / pointRange;
+                facingIdx       = (int)floor((facingBuffer.Length - 1f) * normalizedIdx);
+                widthIdx        = (int)floor((widthBuffer.Length - 1f) * normalizedIdx);
+                facing          = facingBuffer[facingIdx];
+                width           = widthBuffer[widthIdx];
+                curPt           = float4(pointBuffer[i], 0);
+                nextPt          = float4(pointBuffer[i + 1], 0);
+                prevPt          = float4(pointBuffer[i - 1], 0);
+                dir             = (normalize(curPt - prevPt) + normalize(nextPt - curPt)).xyz;
+                miter           = normalizesafe(cross(dir, facing)) * width;
                 vertexBuffer.Add(curPt.xyz + miter);
                 vertexBuffer.Add(curPt.xyz - miter);
             }
@@ -93,11 +90,9 @@ public class UpdateBatchedLineVerticesSystem : JobComponentSystem
             // set end point
             prevPt          = float4(pointBuffer[pointRange - 1], 0);
             curPt           = float4(pointBuffer[pointRange], 0);
-            facing          = float4(facingBuffer[facingBuffer.Length - 1], 0);
-            dir             = (curPt - prevPt);
-            miter           = normalize(cross(dir.xyz, facing.xyz)) * widthBuffer[widthBuffer.Length - 1];
-            int vIdx        = vertexBuffer.Length - 2;
-
+            facing          = facingBuffer[facingBuffer.Length - 1];
+            dir             = (curPt - prevPt).xyz;
+            miter           = normalizesafe(cross(dir, facing.xyz)) * widthBuffer[widthBuffer.Length - 1];
             vertexBuffer.Add(curPt.xyz + miter);
             vertexBuffer.Add(curPt.xyz - miter);
         }

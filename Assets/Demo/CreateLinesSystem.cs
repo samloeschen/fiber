@@ -3,82 +3,103 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Entities;
 using Unity.Mathematics;
-
 using Unity.Burst;  
 
 using static Unity.Mathematics.math;
 using static Unity.Mathematics.noise;
 
-public class CreateLinesSystem : ComponentSystem
+public class CreateLinesSystem : JobComponentSystem
 {
     private Entity _meshEntity;
     private Camera _camera;
     private float _cameraDist;
-    private float _spawnRate = 20f;
+    private float _spawnRate = 50f;
     private float _spawnTimer;
     private bool _initialized = false;
-
+    private EntityArchetype _lineArchetype;
+    private AssignToMeshSystem _assignToMeshSystem;
     public void Initialize (MeshFilter meshFilter, Camera camera, float cameraDist)
     {
         _meshEntity = World.Active.GetOrCreateManager<BatchedLineSystem>().CreateBatchedMesh(meshFilter);
+        _assignToMeshSystem = World.Active.GetOrCreateManager<AssignToMeshSystem>();
         _camera = camera;
         _cameraDist = cameraDist;
         _spawnTimer = 1f;
         _initialized = true;
     }
-    protected override void OnUpdate()
-    {
-        if (!_initialized) return;
 
+    protected override void OnCreateManager()
+    {
+        var entityManager = World.Active.GetOrCreateManager<EntityManager>();
+        _lineArchetype = entityManager.CreateArchetype(
+            typeof(MarkUpdate),
+            typeof(DemoLine),
+            typeof(MeshAssigner),
+            typeof(VertexBuffer)
+        );
+    }
+
+    protected override JobHandle OnUpdate(JobHandle inputDeps)
+    {
+        int spawnCount  = 0;
+        float3 spawnPos = float3(0);
         if (_spawnTimer < 1f)
         {
             _spawnTimer += Time.deltaTime * _spawnRate;
         }
+        var JobHandle = new JobHandle();
         if (_spawnTimer >= 1f && Input.GetMouseButton(0))
         {
+            _spawnTimer -= 1f;
             Vector2 mousePos = Input.mousePosition;
             float3 screenPoint = new float3(mousePos.x, mousePos.y, _cameraDist);
-            float3 worldPoint = _camera.ScreenToWorldPoint(screenPoint);
-            int spawnCount = UnityEngine.Random.Range(3, 6);
-            
-            var commandBuffer = PostUpdateCommands;
+            spawnPos = _camera.ScreenToWorldPoint(screenPoint);
+            spawnCount = UnityEngine.Random.Range(1, 3);
+        }
+        var job = new CreateLinesJob
+        {
+            spawnCount = spawnCount,
+            spawnPos = spawnPos,
+            lineArchetype = _lineArchetype,
+            meshEntity = _meshEntity,
+            commandBuffer = barrier.CreateCommandBuffer(),
+        };
+        return job.Schedule(inputDeps);
+    }
+
+    [Inject] public ChunkModificationBarrier barrier;
+
+    public struct CreateLinesJob : IJob
+    {
+        public int spawnCount;
+        public float3 spawnPos;
+        public EntityCommandBuffer commandBuffer;
+        public EntityArchetype lineArchetype;
+        public Entity meshEntity;
+        public void Execute()
+        {
             for (int i = 0; i < spawnCount; i++)
             {
-                var random = new Unity.Mathematics.Random();
-                random.InitState();
-                float3 position = worldPoint + (random.NextFloat3Direction() * UnityEngine.Random.Range(1f, 2f));
-                
-                commandBuffer.CreateEntity();
-                var batchedLine = new BatchedLine
-                {
-                batchEntity = _meshEntity,
-                };
-                var line = new Line
-                {
-                    isActive = (byte)1,
-                };
-                var demoLine = new DemoLine
+                commandBuffer.CreateEntity(lineArchetype);
+                commandBuffer.SetComponent<DemoLine>(new DemoLine
                 {
                     speed = 1f,
-                    time  = 0f,
-                };
-                commandBuffer.AddComponent(batchedLine);
-                commandBuffer.AddComponent(line);
-                commandBuffer.AddComponent(demoLine);
+                    time = 0f
+                });
+                commandBuffer.SetComponent<MeshAssigner>(new MeshAssigner
+                {
+                    targetMesh = meshEntity
+                });
+                
+                var pointBuffer     = commandBuffer.AddBuffer<PointBuffer>().Reinterpret<float3>();
+                var facingBuffer    = commandBuffer.AddBuffer<FacingBuffer>().Reinterpret<float3>();
+                var widthBuffer     = commandBuffer.AddBuffer<WidthBuffer>().Reinterpret<float>();
 
-                var vertexBuffer = commandBuffer.AddBuffer<VertexBuffer>();
-                var pointsBuffer = commandBuffer.AddBuffer<PointBuffer>().Reinterpret<float3>();
-                var facingBuffer = commandBuffer.AddBuffer<FacingBuffer>().Reinterpret<float3>();
-                var widthBuffer  = commandBuffer.AddBuffer<WidthBuffer>().Reinterpret<float>();
-
-                pointsBuffer.Add(position);
-                pointsBuffer.Add(position + float3(0.0001f)); // that's a hack to prevent nans from creeping into the mesh
-                facingBuffer.Add(float3(0f, 0f, 1f));
+                pointBuffer.Add(spawnPos);
+                pointBuffer.Add(spawnPos);
+                facingBuffer.Add(float3(0, 0, 1));
                 widthBuffer.Add(0.02f);
             }
-            
-            _spawnTimer -= 1f;
-
         }
     }
 }

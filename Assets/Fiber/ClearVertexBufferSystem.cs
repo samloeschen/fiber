@@ -1,35 +1,32 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Burst;  
-using static Unity.Mathematics.math;
 
-[UpdateBefore(typeof(GenerateVerticesSystem))]
-public class ClearVertexBufferSystem : JobComponentSystem
+namespace Fiber
 {
-    protected override JobHandle OnUpdate(JobHandle inputDeps)
+    [UpdateBefore(typeof(GenerateVerticesSystem))]
+    public class ClearVertexBufferSystem : JobComponentSystem
     {
-        var job = new ClearVertexBufferJob
+        protected override JobHandle OnUpdate(JobHandle inputDeps)
         {
-            vertexBuffers = GetBufferFromEntity<VertexBuffer>(isReadOnly: false),
-        };
-        return job.Schedule(this, inputDeps);
-    }
-    // [BurstCompile]
-    [RequireComponentTag(typeof(VertexBuffer))]
-    public struct ClearVertexBufferJob : IJobProcessComponentDataWithEntity<IsActive>
-    {
-        [NativeDisableParallelForRestriction]
-        public BufferFromEntity<VertexBuffer> vertexBuffers;
-        public void Execute(Entity entity, int jobIdx, [ReadOnly] ref IsActive isActive)
+            var job = new ClearVertexBufferJob
+            {
+                vertexBuffers = GetBufferFromEntity<VertexBuffer>(isReadOnly: false),
+            };
+            return job.Schedule(this, inputDeps);
+        }
+        // [BurstCompile]
+        [RequireComponentTag(typeof(VertexBuffer))]
+        public struct ClearVertexBufferJob : IJobProcessComponentDataWithEntity<IsActive>
         {
-            if (!isActive.value) return;
-            vertexBuffers[entity].Clear();
+            [NativeDisableParallelForRestriction]
+            public BufferFromEntity<VertexBuffer> vertexBuffers;
+            public void Execute(Entity entity, int jobIdx, [ReadOnly] ref IsActive isActive)
+            {
+                if (!isActive.value) return;
+                vertexBuffers[entity].Clear();
+            }
         }
     }
 }

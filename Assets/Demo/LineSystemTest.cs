@@ -4,9 +4,10 @@ using Unity.Jobs;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Burst;
+using Fiber;
 
 using static Unity.Mathematics.math;
-using static BatchedLineHelpers;
+using static Fiber.BatchedLineHelpers;
 
 public class LineSystemTest : MonoBehaviour
 {
@@ -15,9 +16,8 @@ public class LineSystemTest : MonoBehaviour
     public float frequency = 4f;
     public float height = 1f;
     public float length = 10f;
-    public float3 offset;
 
-    private BatchedLineSystem _batchedLineSystem;
+    private ManagedMeshSystem _managedMeshSystem;
     private EntityManager _entityManager;
 
     private Entity _lineEntity;
@@ -29,7 +29,7 @@ public class LineSystemTest : MonoBehaviour
     void OnEnable ()
     {
         meshFilter = GetComponent<MeshFilter>();
-        _batchedLineSystem = World.Active.GetOrCreateManager<BatchedLineSystem>();
+        _managedMeshSystem = World.Active.GetOrCreateManager<ManagedMeshSystem>();
         _entityManager = World.Active.GetOrCreateManager<EntityManager>();
 
         if (!createdMeshEntity)
@@ -61,15 +61,7 @@ public class LineSystemTest : MonoBehaviour
                 Mathf.Sin(Time.time + (t * 4)), 
                 0
             );
-            // points[i] += offset;
             widths[0] = 0.2f + (sin(Time.time + (t * 10f)) + 1f) * 0.25f;
-        }
-
-        if (Mathf.Repeat(Time.time, 2f) > 1f)
-        {
-            SetEntityActive(_lineEntity, false);
-        } else {
-            SetEntityActive(_lineEntity, true);
         }
     }
 }

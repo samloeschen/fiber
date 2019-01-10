@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Fiber;
 
 public class DemoSetup : MonoBehaviour
 {

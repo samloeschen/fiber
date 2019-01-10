@@ -1,5 +1,7 @@
 using Unity.Jobs;
 using Unity.Entities;
 
-
-public class LineModificationBarrier : BarrierSystem { }
+namespace Fiber
+{
+    public class LineModificationBarrier : BarrierSystem { }
+}

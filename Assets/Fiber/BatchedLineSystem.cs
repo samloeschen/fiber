@@ -12,49 +12,16 @@ using System.Diagnostics;
 using static Unity.Mathematics.math;
 
 [UpdateAfter(typeof(GenerateMeshSystem))]
-public class BatchedLineSystem : ComponentSystem
+public class ManagedMeshSystem : ComponentSystem
 {
-    public static EntityArchetype DynamicLineArchetype;
-    public static EntityArchetype StaticLineArchetype;
-
-    public static EntityArchetype DynamicMeshArchetype;
-    public static EntityArchetype StaticMeshArchetype;
-
-    private EntityArchetype _batchedMeshArchetype;
     private ComponentGroup _meshQuery;
     private HashSet<Entity> _processedEntities;
     private Dictionary<Entity, ManagedMeshData> _managedMeshes;
     private EntityManager _entityManager;
     
-
     protected override void OnCreateManager()
     {
         _entityManager = World.Active.GetOrCreateManager<EntityManager>();
-        _meshQuery = this.GetComponentGroup(new EntityArchetypeQuery
-        {
-            All = new[]
-            { 
-                ComponentType.Create<IsActive>(),
-                ComponentType.Create<VertexBuffer>(),
-                ComponentType.Create<TriangleBuffer>() 
-            }
-        });
-
-        DynamicLineArchetype = _entityManager.CreateArchetype(
-            typeof(IsActive),
-            typeof(VertexBuffer),
-            typeof(PointBuffer),
-            typeof(FacingBuffer),
-            typeof(WidthBuffer)
-        );
-
-        DynamicMeshArchetype = _entityManager.CreateArchetype(
-            typeof(IsActive),
-            typeof(VertexBuffer),
-            typeof(TriangleBuffer),
-            typeof(EntityBuffer)
-        );
-
         _managedMeshes = new Dictionary<Entity, ManagedMeshData>();
         _processedEntities = new HashSet<Entity>();
     }
@@ -111,69 +78,38 @@ public class BatchedLineSystem : ComponentSystem
         chunks.Dispose();
     }
 
-    private const int defaultPointCount = 2;
-    private const float defaultStartWidth = 0.25f;
-    public Entity CreateBatchedLine(Entity batchMeshEntity, NativeArray<float3> initialPoints, float3 facing, float initialWidth = defaultStartWidth, bool startActive = true)
+    public void AssignManagedMeshToEntity(UnityEngine.Mesh mesh, Entity meshEntity, int vertexAllocation = 0)
     {
-        var lineEntity      = _entityManager.CreateEntity(DynamicLineArchetype);
-        var pointBuffer     = _entityManager.GetBuffer<PointBuffer>(lineEntity).Reinterpret<float3>();
-        var facingBuffer    = _entityManager.GetBuffer<FacingBuffer>(lineEntity).Reinterpret<float3>();
-        var widthBuffer     = _entityManager.GetBuffer<WidthBuffer>(lineEntity).Reinterpret<float>();
-
-        pointBuffer.AddRange(initialPoints);
-        facingBuffer.Add(facing);
-        widthBuffer.Add(initialWidth);
-
-        _entityManager.SetComponentData(lineEntity, new IsActive
+        if (!_managedMeshes.ContainsKey(meshEntity))
         {
-            value = true
-        });
-
-        var entityBuffer = _entityManager.GetBuffer<EntityBuffer>(batchMeshEntity).Reinterpret<Entity>();
-        entityBuffer.Add(lineEntity);
-
-        return lineEntity;
-    }
-    public Entity CreateBatchedLine(Entity batchMeshEntity, int initialPointCount, float3 facing, float initialWidth = defaultStartWidth, bool startActive = true)
-    {
-        var initialPoints = new NativeArray<float3>(initialPointCount, Allocator.Temp);
-        var lineEntity = CreateBatchedLine(batchMeshEntity, initialPoints, facing, initialWidth, startActive);
-        initialPoints.Dispose();
-        return lineEntity;
-    }
-
-    // TODO this should take a material instead of a mesh filter
-    public Entity CreateBatchedMesh (MeshFilter meshFilter)
-    {
-        // create the new mesh entity
-        var meshEntity = _entityManager.CreateEntity(DynamicMeshArchetype);
-        _entityManager.SetComponentData(meshEntity, new IsActive
+            _managedMeshes.Add(meshEntity, new ManagedMeshData
+            {
+                mesh        = mesh,
+                vertices    = new List<Vector3>(vertexAllocation),
+                triangles   = new List<int>(vertexAllocation * 3)
+            });
+        }
+        else
         {
-            value = true
-        });
-        var m = new Mesh();
-        m.MarkDynamic();
-        meshFilter.mesh = m;
-
-        // create a container for the managed data we want to associate with this entity
-        var managedMeshData = new ManagedMeshData
-        {
-            mesh        = m,
-            meshFilter  = meshFilter,
-            vertices    = new List<Vector3>(),
-            triangles   = new List<int>()
-        };
-        _managedMeshes.Add(meshEntity, managedMeshData);
-        return meshEntity;
+            var data = _managedMeshes[meshEntity];
+            if (data.vertices.Capacity < vertexAllocation)
+            {
+                data.vertices.Resize(vertexAllocation);
+            }
+            int triangleAllocation = vertexAllocation * 3;
+            if (data.triangles.Capacity < triangleAllocation)
+            {
+                data.triangles.Resize(triangleAllocation);
+            }
+            data.mesh = mesh;
+            _managedMeshes[meshEntity] = data;
+        }
     }
-
-    
 }
 
 public struct ManagedMeshData
 {
     public Mesh mesh;
-    public MeshFilter meshFilter;
     public List<Vector3> vertices;
     public List<int> triangles;
 }

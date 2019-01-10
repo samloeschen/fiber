@@ -42,7 +42,7 @@ public class GenerateVerticesSystem : JobComponentSystem
         public void Execute(Entity lineEntity, int jobIdx, [ReadOnly] ref IsActive isActive)
         {
             if (!isActive.value) return;
-
+            
             var pointBuffer = pointBuffers[lineEntity].Reinterpret<float3>();
             if (pointBuffer.Length < 2) return;
 

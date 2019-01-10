@@ -10,7 +10,6 @@ using Unity.Burst;
 using static Unity.Mathematics.math;
 
 
-// [Update After(typeof(BatchedLineSystem))]
 [UpdateBefore(typeof(GenerateVerticesSystem))]
 public class ClearTriangleBufferSystem : JobComponentSystem
 {

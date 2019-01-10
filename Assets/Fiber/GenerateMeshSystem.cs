@@ -37,6 +37,7 @@ public class GenerateMeshSystem : JobComponentSystem
 
         public void Execute (Entity meshEntity, int jobIdx, [ReadOnly] ref IsActive isActive)
         {
+            if (!isActive.value) return;
             var vertexBuffer        = vertexBuffers[meshEntity].Reinterpret<float3>();
             var triangleBuffer      = triangleBuffers[meshEntity].Reinterpret<int>();
             var entityBuffer        = entityBuffers[meshEntity].Reinterpret<Entity>();

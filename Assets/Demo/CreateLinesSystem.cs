@@ -20,7 +20,7 @@ public class CreateLinesSystem : JobComponentSystem
     private AssignToMeshSystem _assignToMeshSystem;
     public void Initialize (MeshFilter meshFilter, Camera camera, float cameraDist)
     {
-        _meshEntity = World.Active.GetOrCreateManager<BatchedLineSystem>().CreateBatchedMesh(meshFilter);
+        // _meshEntity = World.Active.GetOrCreateManager<BatchedLineSystem>().CreateBatchedMesh(meshFilter);
         _assignToMeshSystem = World.Active.GetOrCreateManager<AssignToMeshSystem>();
         _camera = camera;
         _cameraDist = cameraDist;
@@ -47,7 +47,6 @@ public class CreateLinesSystem : JobComponentSystem
         {
             _spawnTimer += Time.deltaTime * _spawnRate;
         }
-        var JobHandle = new JobHandle();
         if (_spawnTimer >= 1f && Input.GetMouseButton(0))
         {
             _spawnTimer -= 1f;

@@ -6,6 +6,7 @@ using Unity.Mathematics;
 using Unity.Burst;
 
 using static Unity.Mathematics.math;
+using static BatchedLineHelpers;
 
 public class LineSystemTest : MonoBehaviour
 {
@@ -18,38 +19,40 @@ public class LineSystemTest : MonoBehaviour
 
     private BatchedLineSystem _batchedLineSystem;
     private EntityManager _entityManager;
-    private static Entity _meshEntity;
+
     private Entity _lineEntity;
-    private DynamicBuffer<float3> _pointsBuf;
-    public DynamicBuffer<float> _widthBuf;
+    private static LineMeshData _lineMeshData;
+
 
     static bool createdMeshEntity = false;
 
     void OnEnable ()
     {
+        meshFilter = GetComponent<MeshFilter>();
         _batchedLineSystem = World.Active.GetOrCreateManager<BatchedLineSystem>();
+        _entityManager = World.Active.GetOrCreateManager<EntityManager>();
 
         if (!createdMeshEntity)
         {
-            _meshEntity = _batchedLineSystem.CreateBatchedMesh(meshFilter);
+            _lineMeshData = CreateLineMesh(vertexAllocation: 128);
+            meshFilter.mesh = _lineMeshData.mesh;
             createdMeshEntity = true;
         }
-        
-        _entityManager = World.Active.GetOrCreateManager<EntityManager>();
 
-        // set up our line entity and associated buffers
-        var startPoints = new NativeArray<float3>(3, Allocator.Temp);
-        startPoints[0] = float3(0, 1, 0);
-        startPoints[1] = float3(0, 1, 0);
-        startPoints[2] = float3(0, 2, 0);
-        _lineEntity = _batchedLineSystem.CreateBatchedLine(_meshEntity, 5, float3(0, 0, 1));
+        _lineEntity = CreateLine(pointCount, facingCount: 1, widthCount: 1);
+        AssignLineToMesh(_lineEntity, _lineMeshData);
+
     }
     public JobHandle jobHandle;
 
     void Update ()
     {
-        var points = _entityManager.GetBuffer<PointBuffer>(_lineEntity).Reinterpret<float3>();
-        var widths = _entityManager.GetBuffer<WidthBuffer>(_lineEntity).Reinterpret<float>();
+        var points = GetBufferForEntity<PointBuffer>(_lineEntity).Reinterpret<float3>();
+        var facing = GetBufferForEntity<FacingBuffer>(_lineEntity).Reinterpret<float3>();
+        var widths = GetBufferForEntity<WidthBuffer>(_lineEntity).Reinterpret<float>();
+
+        facing[0] = float3(0, 0, 1);
+        
         for (int i = 0; i < points.Length; i++) {
             float t = (float) i / (points.Length - 1f);
             float t2 = (t * 0.5f) - 0.25f;
@@ -58,8 +61,15 @@ public class LineSystemTest : MonoBehaviour
                 Mathf.Sin(Time.time + (t * 4)), 
                 0
             );
-            points[i] += offset;
+            // points[i] += offset;
             widths[0] = 0.2f + (sin(Time.time + (t * 10f)) + 1f) * 0.25f;
+        }
+
+        if (Mathf.Repeat(Time.time, 2f) > 1f)
+        {
+            SetEntityActive(_lineEntity, false);
+        } else {
+            SetEntityActive(_lineEntity, true);
         }
     }
 }

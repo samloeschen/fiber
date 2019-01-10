@@ -21,7 +21,7 @@ public class BatchedLineSystem : ComponentSystem
     public static EntityArchetype StaticMeshArchetype;
 
     private EntityArchetype _batchedMeshArchetype;
-    private ComponentGroup _meshDirtyQuery;
+    private ComponentGroup _meshQuery;
     private HashSet<Entity> _processedEntities;
     private Dictionary<Entity, ManagedMeshData> _managedMeshes;
     private EntityManager _entityManager;
@@ -30,26 +30,18 @@ public class BatchedLineSystem : ComponentSystem
     protected override void OnCreateManager()
     {
         _entityManager = World.Active.GetOrCreateManager<EntityManager>();
-        _meshDirtyQuery = this.GetComponentGroup(new EntityArchetypeQuery
+        _meshQuery = this.GetComponentGroup(new EntityArchetypeQuery
         {
             All = new[]
             { 
-                ComponentType.Create<MarkUpdate>(),
+                ComponentType.Create<IsActive>(),
                 ComponentType.Create<VertexBuffer>(),
                 ComponentType.Create<TriangleBuffer>() 
             }
         });
 
         DynamicLineArchetype = _entityManager.CreateArchetype(
-            typeof(MarkUpdate),
-            typeof(VertexBuffer),
-            typeof(PointBuffer),
-            typeof(FacingBuffer),
-            typeof(WidthBuffer)
-        );
-
-        StaticLineArchetype = _entityManager.CreateArchetype(
-            typeof(MarkStatic),
+            typeof(IsActive),
             typeof(VertexBuffer),
             typeof(PointBuffer),
             typeof(FacingBuffer),
@@ -57,14 +49,7 @@ public class BatchedLineSystem : ComponentSystem
         );
 
         DynamicMeshArchetype = _entityManager.CreateArchetype(
-            typeof(MarkUpdate),
-            typeof(VertexBuffer),
-            typeof(TriangleBuffer),
-            typeof(EntityBuffer)
-        );
-
-        StaticMeshArchetype = _entityManager.CreateArchetype(
-            typeof(MarkStatic),
+            typeof(IsActive),
             typeof(VertexBuffer),
             typeof(TriangleBuffer),
             typeof(EntityBuffer)
@@ -76,40 +61,42 @@ public class BatchedLineSystem : ComponentSystem
     protected override void OnUpdate()
     {
         _processedEntities.Clear();
-        var meshDirtyType = GetArchetypeChunkComponentType<MarkUpdate>(true);
-        var chunks = _meshDirtyQuery.CreateArchetypeChunkArray(Allocator.TempJob);
+        // var meshDirtyType = GetArchetypeChunkComponentType<Self>(true);
+        var isActiveType        = GetArchetypeChunkComponentType<IsActive>(isReadOnly: true);
+        var vertexBufferType    = GetArchetypeChunkBufferType<VertexBuffer>(isReadOnly: false);
+        var triangleBufferType  = GetArchetypeChunkBufferType<TriangleBuffer>(isReadOnly: false);
+        var entityType          = GetArchetypeChunkEntityType();
+        var chunks              = _meshQuery.CreateArchetypeChunkArray(Allocator.TempJob);
+
         for (int chunkIdx = 0; chunkIdx < chunks.Length; chunkIdx++)
         {
-            var chunk = chunks[chunkIdx];
-            var meshDirtyBuffer = chunk.GetNativeArray(meshDirtyType);
+            var chunk               = chunks[chunkIdx];
+            var isActiveBuffer      = chunk.GetNativeArray(isActiveType);
+            var vertexBuffers       = chunk.GetBufferAccessor(vertexBufferType);
+            var triangleBuffers     = chunk.GetBufferAccessor(triangleBufferType);
+            var entityBuffer        = chunk.GetNativeArray(entityType);
+
             for (int i = 0; i < chunk.Count; i++)
             {
-                var meshEntity = meshDirtyBuffer[i].entity;
-                if (_processedEntities.Contains(meshEntity)) return;
+                if (!isActiveBuffer[i].value) continue;
+
+                var meshEntity = entityBuffer[i];
+                if (_processedEntities.Contains(meshEntity)) continue;
                 _processedEntities.Add(meshEntity);
                 
-                // make sure the mesh exists in our dictionary, if not, create it
-                ManagedMeshData managedMeshData = new ManagedMeshData();
-                if (_managedMeshes.ContainsKey(meshEntity))
-                {
-                    managedMeshData = _managedMeshes[meshEntity];
-                }
-                else
-                {
-                    continue;
-                }
+                // make sure the mesh exists in our dictionary
+                if (!_managedMeshes.ContainsKey(meshEntity)) continue;
+                var managedMeshData = _managedMeshes[meshEntity];
 
                 // update mesh arrays
                 var managedVertices         = managedMeshData.vertices;
                 var managedTriangles        = managedMeshData.triangles;
                 var mesh                    = managedMeshData.mesh;
-                var nativeVertexBuffer      = EntityManager.GetBuffer<VertexBuffer>(meshEntity).Reinterpret<Vector3>();
-                var nativeTriangleBuffer    = EntityManager.GetBuffer<TriangleBuffer>(meshEntity).Reinterpret<int>();
+                var nativeVertexBuffer      = vertexBuffers[i].Reinterpret<Vector3>();
+                var nativeTriangleBuffer    = triangleBuffers[i].Reinterpret<int>();
 
-                if (nativeVertexBuffer.Length == 0 || nativeTriangleBuffer.Length == 0)
-                {
-                    continue;
-                }
+                if (nativeVertexBuffer.Length == 0 || nativeTriangleBuffer.Length == 0) continue;
+
                 managedVertices.AddRange(nativeVertexBuffer);
                 managedTriangles.AddRange(nativeTriangleBuffer);
                 
@@ -137,6 +124,11 @@ public class BatchedLineSystem : ComponentSystem
         facingBuffer.Add(facing);
         widthBuffer.Add(initialWidth);
 
+        _entityManager.SetComponentData(lineEntity, new IsActive
+        {
+            value = true
+        });
+
         var entityBuffer = _entityManager.GetBuffer<EntityBuffer>(batchMeshEntity).Reinterpret<Entity>();
         entityBuffer.Add(lineEntity);
 
@@ -155,6 +147,10 @@ public class BatchedLineSystem : ComponentSystem
     {
         // create the new mesh entity
         var meshEntity = _entityManager.CreateEntity(DynamicMeshArchetype);
+        _entityManager.SetComponentData(meshEntity, new IsActive
+        {
+            value = true
+        });
         var m = new Mesh();
         m.MarkDynamic();
         meshFilter.mesh = m;
@@ -162,10 +158,10 @@ public class BatchedLineSystem : ComponentSystem
         // create a container for the managed data we want to associate with this entity
         var managedMeshData = new ManagedMeshData
         {
-            mesh = m,
-            meshFilter = meshFilter,
-            vertices = new List<Vector3>(),
-            triangles = new List<int>()
+            mesh        = m,
+            meshFilter  = meshFilter,
+            vertices    = new List<Vector3>(),
+            triangles   = new List<int>()
         };
         _managedMeshes.Add(meshEntity, managedMeshData);
         return meshEntity;

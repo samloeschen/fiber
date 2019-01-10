@@ -11,7 +11,6 @@ using static Unity.Mathematics.math;
 
 using System.Diagnostics;
 
-[UpdateAfter(typeof(MarkUpdateSystem))]
 [UpdateBefore(typeof(GenerateMeshSystem))]
 public class GenerateVerticesSystem : JobComponentSystem
 {
@@ -29,7 +28,7 @@ public class GenerateVerticesSystem : JobComponentSystem
 
     [BurstCompile]
     [RequireComponentTag(typeof(VertexBuffer), typeof(PointBuffer), typeof(FacingBuffer), typeof(WidthBuffer))]
-    public struct GenerateVerticesJob : IJobProcessComponentData<MarkUpdate>
+    public struct GenerateVerticesJob : IJobProcessComponentDataWithEntity<IsActive>
     {
         [NativeDisableParallelForRestriction]
         public BufferFromEntity<VertexBuffer> vertexBuffers;
@@ -40,9 +39,10 @@ public class GenerateVerticesSystem : JobComponentSystem
         [ReadOnly]
         public BufferFromEntity<WidthBuffer> widthBuffers;
         
-        public void Execute([ReadOnly] ref MarkUpdate markUpdate)
+        public void Execute(Entity lineEntity, int jobIdx, [ReadOnly] ref IsActive isActive)
         {
-            var lineEntity = markUpdate.entity;
+            if (!isActive.value) return;
+
             var pointBuffer = pointBuffers[lineEntity].Reinterpret<float3>();
             if (pointBuffer.Length < 2) return;
 

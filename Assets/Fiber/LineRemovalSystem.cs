@@ -5,7 +5,6 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Burst;  
 
-[UpdateBefore(typeof(MarkUpdateSystem))]
 public class RemoveFromMeshSystem : JobComponentSystem
 {
     public NativeQueue<RemoveFromMeshInfo> lineRemovalQueue;
@@ -21,16 +20,12 @@ public class RemoveFromMeshSystem : JobComponentSystem
 
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
-        if (lineRemovalQueue.Count > 0)
+        var job = new RemoveFromMeshJob
         {
-            var job = new RemoveFromMeshJob
-            {
-                entityBuffers = GetBufferFromEntity<EntityBuffer>(),
-                lineRemovalQueue = lineRemovalQueue
-            };
-            return job.Schedule(inputDeps);
-        }
-        return inputDeps;
+            entityBuffers = GetBufferFromEntity<EntityBuffer>(),
+            lineRemovalQueue = lineRemovalQueue
+        };
+        return job.Schedule(inputDeps);
     }
 
     public struct RemoveFromMeshInfo
@@ -46,6 +41,7 @@ public class RemoveFromMeshSystem : JobComponentSystem
 
         public void Execute ()
         {
+            if (lineRemovalQueue.Count == 0) return;
             while(lineRemovalQueue.TryDequeue(out var lineRemovalInfo))
             {
                 // slow, O(n) removal for now

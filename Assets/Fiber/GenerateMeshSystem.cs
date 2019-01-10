@@ -26,7 +26,7 @@ public class GenerateMeshSystem : JobComponentSystem
     
     [BurstCompile]
     [RequireComponentTag(typeof(VertexBuffer), typeof(TriangleBuffer), typeof(EntityBuffer))]
-    public struct GenerateMeshJob : IJobProcessComponentData<MarkUpdate>
+    public struct GenerateMeshJob : IJobProcessComponentDataWithEntity<IsActive>
     {
         [NativeDisableParallelForRestriction]
         public BufferFromEntity<VertexBuffer> vertexBuffers;
@@ -35,9 +35,8 @@ public class GenerateMeshSystem : JobComponentSystem
         [ReadOnly]
         public BufferFromEntity<EntityBuffer> entityBuffers; 
 
-        public void Execute (ref MarkUpdate markUpdate)
+        public void Execute (Entity meshEntity, int jobIdx, [ReadOnly] ref IsActive isActive)
         {
-            var meshEntity          = markUpdate.entity;
             var vertexBuffer        = vertexBuffers[meshEntity].Reinterpret<float3>();
             var triangleBuffer      = triangleBuffers[meshEntity].Reinterpret<int>();
             var entityBuffer        = entityBuffers[meshEntity].Reinterpret<Entity>();

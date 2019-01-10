@@ -32,7 +32,7 @@ public class CreateLinesSystem : JobComponentSystem
     {
         var entityManager = World.Active.GetOrCreateManager<EntityManager>();
         _lineArchetype = entityManager.CreateArchetype(
-            typeof(MarkUpdate),
+            typeof(IsActive),
             typeof(DemoLine),
             typeof(MeshAssigner),
             typeof(VertexBuffer)
@@ -58,16 +58,16 @@ public class CreateLinesSystem : JobComponentSystem
         }
         var job = new CreateLinesJob
         {
-            spawnCount = spawnCount,
-            spawnPos = spawnPos,
-            lineArchetype = _lineArchetype,
-            meshEntity = _meshEntity,
-            commandBuffer = barrier.CreateCommandBuffer(),
+            spawnCount      = spawnCount,
+            spawnPos        = spawnPos,
+            lineArchetype   = _lineArchetype,
+            meshEntity      = _meshEntity,
+            commandBuffer   = barrier.CreateCommandBuffer(),
         };
         return job.Schedule(inputDeps);
     }
 
-    [Inject] public ChunkModificationBarrier barrier;
+    [Inject] public LineModificationBarrier barrier;
 
     public struct CreateLinesJob : IJob
     {
@@ -81,9 +81,13 @@ public class CreateLinesSystem : JobComponentSystem
             for (int i = 0; i < spawnCount; i++)
             {
                 commandBuffer.CreateEntity(lineArchetype);
+                commandBuffer.SetComponent<IsActive>(new IsActive
+                {
+                    value = true
+                });
                 commandBuffer.SetComponent<DemoLine>(new DemoLine
                 {
-                    speed = 1f,
+                    speed = 3f,
                     time = 0f
                 });
                 commandBuffer.SetComponent<MeshAssigner>(new MeshAssigner
@@ -98,7 +102,7 @@ public class CreateLinesSystem : JobComponentSystem
                 pointBuffer.Add(spawnPos);
                 pointBuffer.Add(spawnPos);
                 facingBuffer.Add(float3(0, 0, 1));
-                widthBuffer.Add(0.02f);
+                widthBuffer.Add(0.01f);
             }
         }
     }

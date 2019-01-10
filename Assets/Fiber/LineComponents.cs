@@ -47,17 +47,25 @@ public struct VertexBuffer : IBufferElementData
     public float3 Vertex;
 }
 
-public struct MarkUpdate : IComponentData
+public struct ActiveFlag : IComponentData
 {
-    public Entity entity;
-}
-
-public struct MarkStatic : IComponentData
-{
-    public Entity entity;
+    public byte isActive;
 }
 
 public struct MeshAssigner : IComponentData
 {
     public Entity targetMesh;
+}
+
+public struct IsActive : IComponentData
+{
+    public Flag value;
+}
+
+public struct Flag
+{
+        private readonly byte _value;
+        public Flag(bool value) { _value = (byte)(value ? 1 : 0); }
+        public static implicit operator Flag(bool value) { return new Flag(value); }
+        public static implicit operator bool(Flag value) { return value._value != 0; }
 }

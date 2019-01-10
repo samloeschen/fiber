@@ -257,7 +257,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 990942471}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -441,6 +441,12 @@ MonoBehaviour:
   cameraDist: 20
   camera: {fileID: 990942473}
   meshFilter: {fileID: 1664910634}
+  bounds:
+    serializedVersion: 2
+    x: -6
+    y: -6
+    width: 3
+    height: 3
 --- !u!4 &1664910636
 Transform:
   m_ObjectHideFlags: 0

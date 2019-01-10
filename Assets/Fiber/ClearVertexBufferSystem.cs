@@ -9,7 +9,7 @@ using Unity.Mathematics;
 using Unity.Burst;  
 using static Unity.Mathematics.math;
 
-[UpdateAfter(typeof(BatchedLineSystem))]
+[UpdateBefore(typeof(GenerateVerticesSystem))]
 public class ClearVertexBufferSystem : JobComponentSystem
 {
     protected override JobHandle OnUpdate(JobHandle inputDeps)
@@ -20,15 +20,16 @@ public class ClearVertexBufferSystem : JobComponentSystem
         };
         return job.Schedule(this, inputDeps);
     }
-    [BurstCompile]
+    // [BurstCompile]
     [RequireComponentTag(typeof(VertexBuffer))]
-    public struct ClearVertexBufferJob : IJobProcessComponentData<MarkUpdate>
+    public struct ClearVertexBufferJob : IJobProcessComponentDataWithEntity<IsActive>
     {
         [NativeDisableParallelForRestriction]
         public BufferFromEntity<VertexBuffer> vertexBuffers;
-        public void Execute(ref MarkUpdate markUpdate)
+        public void Execute(Entity entity, int jobIdx, [ReadOnly] ref IsActive isActive)
         {
-            vertexBuffers[markUpdate.entity].Clear();
+            if (!isActive.value) return;
+            vertexBuffers[entity].Clear();
         }
     }
 }

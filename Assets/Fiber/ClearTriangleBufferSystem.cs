@@ -10,7 +10,8 @@ using Unity.Burst;
 using static Unity.Mathematics.math;
 
 
-[UpdateAfter(typeof(BatchedLineSystem))]
+// [Update After(typeof(BatchedLineSystem))]
+[UpdateBefore(typeof(GenerateVerticesSystem))]
 public class ClearTriangleBufferSystem : JobComponentSystem
 {
     protected override JobHandle OnUpdate(JobHandle inputDeps)
@@ -23,13 +24,14 @@ public class ClearTriangleBufferSystem : JobComponentSystem
     }
     [BurstCompile]
     [RequireComponentTag(typeof(TriangleBuffer))]
-    public struct ClearTriangleBufferJob : IJobProcessComponentData<MarkUpdate>
+    public struct ClearTriangleBufferJob : IJobProcessComponentDataWithEntity<IsActive>
     {
         [NativeDisableParallelForRestriction]
         public BufferFromEntity<TriangleBuffer> triangleBuffers;
-        public void Execute(ref MarkUpdate markUpdate)
+        public void Execute(Entity entity, int jobIdx, ref IsActive isActive)
         {
-            triangleBuffers[markUpdate.entity].Clear();
+            if (!isActive.value) return;
+            triangleBuffers[entity].Clear();
         }
     }
 }

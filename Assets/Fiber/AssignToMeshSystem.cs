@@ -5,10 +5,9 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Burst;  
 
-[UpdateAfter(typeof(MarkUpdateSystem))]
 public class AssignToMeshSystem : JobComponentSystem
 {
-    [Inject] public ChunkModificationBarrier barrier;
+    [Inject] public LineModificationBarrier barrier;
 
     public NativeQueue<MeshAssignmentInfo> meshAssignmentQueue;
 
